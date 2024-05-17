@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Page_de_garde</title>
+    <style>
+        #bord1 {
+            border-top: 10px solid #C0C0C0;
+            border-left: 10px solid #C0C0C0;
+            border-bottom: 10px solid #691D6E;
+            border-right: 10px solid #691D6E;
+            padding: 2px;
+            width: 770px;
+            position: absolute;
+            top: 15px;
+            left: 0%;
+        }
+
+        #bord2 {
+            border-top: 10px solid #691D6E;
+            border-left: 10px solid #691D6E;
+            border-bottom: 10px solid #C0C0C0;
+            border-right: 10px solid #C0C0C0;
+            padding: 10px;
+        }
+
+        h1,
+        h2,
+        p {
+            text-align: center;
+        }
+
+        #image_center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .text {
+            width: auto;
+            text-align: justify;
+            color: #BFBFBE;
+            margin-top: -2%;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="bord1">
+        <div id="bord2">
+            <div id="entete">
+                <img src="data:image/jpg;base64,{{logoentetegauche}}" width="140px" height="140px" />
+                <img src="data:image/png;base64,{{logoentetedroit}}" width="140px" height="140px"
+                     style="position: absolute; right: 0%; padding-right: 30px;" />
+            </div>
+            <h2 style="margin-top: 0%">CERTIFICATE</h2>
+            <p id="intro">
+                Given the assessment of  {{date}} <br/>
+                Given the decision of {{date}} that resulted from it
+            </p>
+            <p>
+            <h1 style="text-transform: uppercase; margin-top: -2%">Trainning imprint</h1>
+            <div class="">
+                <img src="data:image/jpg;base64,{{diamantlogo}}" style="margin-left: 40%; margin-top: -2%;" width="140px" height="140px" />
+            </div>
+            <p style="margin-top: 0%"> is awarded to </p>
+            <h1 style="text-transform: uppercase;margin-top: -2%">{{lastname}} <span style="text-transform: capitalize;"> {{firstname}}</span>
+            </h1>
+            </p>
+            <p>
+                To verify the authenticity of this score <br/><br/>
+                <img src="data:image/jpg;base64,{{qrcode}}" alt="QRcode" style="width: 130px;height: 130px;" /><br/><br/>
+                Expiration date {{dateExpiration}}
+            </p><br />
+            <p class="text">
+                This certificate will remain valid until its expiry unless otherwise notified,
+                provided that the implementation and compliance with continuous improvement framework
+                requirements are deemed satisfactory during surveillance audits
+                , and provided that the general terms of use and ethical charter are observed.
+            </p>
+            <div id="footer" style="margin-top: -2.5%">
+                <div id="image_footer">
+                    <img src="data:image/jpg;base64,{{humanbetlogo}}" width="120px" height="90px" />
+                    <img src="data:image/jpg;base64,{{mmlogo}}" width="120px" height="90px"
+                         style="position: absolute; right: 0%; padding-right: 30px;" />
+                </div>
+                <div id="sign_footer" style="overflow: hidden; margin-top: -3%">
+                    <h3 style="color: #BFBFBE; float: left;">Dr Mathias MONDO</h3>
+                    <h3 style="color: #BFBFBE; float: right;">Jean Philippe BOSSOU</h3>
+                </div>
+                <div>
+                    <img src="data:image/png;base64,{{signature2}}" width="50px" height="40px"/>
+                    <img src="data:image/png;base64,{{signature1}}"width="50px" height="40px"
+                         style="position: absolute; right: 0%; padding-right: 30px;"/>
+                </div>
+                <p style="font-style: italic;    color: #BFBFBE; margin-top: 0%">
+                    Further information on its scope of application is available on request,
+                    in accordance with current regulations, at the following address: contact@m4moveralls.com </p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

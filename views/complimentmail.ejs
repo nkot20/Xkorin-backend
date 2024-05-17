@@ -1,0 +1,223 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Calc - Email Template</title>
+  <style type="text/css">
+    body {
+      background: #f3f6fa;
+      line-height: 18px;
+      margin: 0;
+      font-family: "verdana", Helvetica, Arial, sans-serif !important;
+      color: #7c8081;
+      font-size: 14px;
+      line-height: 20px;
+      font-weight: 400;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    a,
+    img {
+      border: none;
+      outline: none;
+    }
+
+    .strong {
+      font-weight: bold;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    table {
+      border-collapse: collapse !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div style="background-color: #f3f6fa">
+    <table style="
+          margin: 0 auto;
+          text-align: center;
+          width: 100%;
+          border: 0;
+          padding: 0;
+          background-color: #f3f6fa;
+        " cellspacing="0" cellpadding="0">
+      <tr>
+        <td bgcolor="#f3f6fa" style="padding: 30px 0; background-color: #f3f6fa">
+          <table cellpadding="0" cellspacing="0" style="
+                text-align: left;
+                vertical-align: top;
+                width: 700px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                max-width: 700px;
+              ">
+            <tr>
+              <td style="
+                    padding: 20px;
+                    border-bottom: 2px solid #211261;
+                    text-align: center;
+                    vertical-align: middle;
+                  ">
+                <a href="#" title="Ovento" style="
+                      display: inline-block;
+                      text-decoration: none;
+                      color: #000;
+                      outline: none;
+                    "><img src="<%= compliment_logo %>" style="
+                        margin: 0;
+                        vertical-align: middle;
+                        border: none;
+                        outline: none;
+                      " alt="logo" title="Ovento" /></a>
+              </td>
+            </tr>
+            <tr>
+              <td align="justify" valign="top" bgcolor="#ffffff" style="
+                    padding: 25px 25px;
+                    text-align: justify;
+                    vertical-align: top;
+                    background-color: #ffffff;
+                    font-family: 'verdana', Helvetica, Arial, sans-serif !important;
+                    color: #111010;
+                    font-size: 14px;
+                    line-height: 22px;
+                    font-weight: 400;
+                  ">
+                <strong style="
+                      font-size: 25px;
+                      text-align: center;
+                      display: block;
+                      margin-bottom: 10px;
+                    ">Compliment</strong>
+                <ul style="list-style: none">
+                  <li style="
+                        line-height: 25px;
+                        padding-bottom: 6px;
+                        font-size: 17px;
+                      ">
+                    <strong> Message: </strong>
+                    <%= message %>
+                  </li>
+                  <li style="
+                        line-height: 25px;
+                        padding-bottom: 6px;
+                        font-size: 17px;
+                      ">
+                    <strong> Date: </strong>
+                    <%= date %>
+                  </li>
+                  <li style="
+                        line-height: 25px;
+                        padding-bottom: 6px;
+                        font-size: 17px;
+                      ">
+                    <strong> Time: </strong>
+                    <%= time %>
+                  </li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr>
+              <td bgcolor="#211261" valign="top" style="
+                    padding: 20px 15px;
+                    text-align: justify;
+                    vertical-align: top;
+                    background-color: #211261;
+                    font-family: 'verdana', Helvetica, Arial, sans-serif !important;
+                    color: #fff;
+                    font-size: 14px;
+                    line-height: 22px;
+                    font-weight: 400;
+                    text-align: center;
+                  ">
+                <a href="" target="_blank" title="Facebook" style="
+                      display: inline-block;
+                      border: none;
+                      outline: none;
+                      width: 32px;
+                      height: 32px;
+                      vertical-align: top;
+                      margin: 0 5px;
+                    "><img src="<%= facebook_logo %>" style="
+                        margin: 0;
+                        vertical-align: middle;
+                        border: none;
+                        outline: none;
+                        height: 32px;
+                        width: 32px;
+                      " alt="Facebook" title="Facebook" /></a>
+                <a href="" target="_blank" title="LinkedIn" style="
+                      display: inline-block;
+                      border: none;
+                      outline: none;
+                      width: 32px;
+                      height: 32px;
+                      vertical-align: top;
+                      margin: 0 5px;
+                    "><img src="<%= linkedin_logo %>" style="
+                        margin: 0;
+                        vertical-align: middle;
+                        border: none;
+                        outline: none;
+                        height: 32px;
+                        width: 32px;
+                      " alt="LinkedIn" title="LinkedIn" /></a>
+                <a href="" target="_blank" title="Twitter" style="
+                      display: inline-block;
+                      border: none;
+                      outline: none;
+                      width: 32px;
+                      height: 32px;
+                      vertical-align: top;
+                      margin: 0 5px;
+                    "><img src="<%= twitter_logo %>" style="
+                        margin: 0;
+                        vertical-align: middle;
+                        border: none;
+                        outline: none;
+                        height: 32px;
+                        width: 32px;
+                      " alt="Twitter" title="Twitter" /></a>
+                <a href="" target="_blank" title="Instagram" style="
+                      display: inline-block;
+                      border: none;
+                      outline: none;
+                      width: 32px;
+                      height: 32px;
+                      vertical-align: top;
+                      margin: 0 5px;
+                    "><img src="<%= instagram_logo %>" style="
+                        margin: 0;
+                        vertical-align: middle;
+                        border: none;
+                        outline: none;
+                        height: 32px;
+                        width: 32px;
+                      " alt="Instagram" title="Instagram" /></a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+
+</html>

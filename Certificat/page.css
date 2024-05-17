@@ -1,0 +1,39 @@
+#bord1 {
+    border-top: 10px solid #C0C0C0;
+    border-left: 10px solid #C0C0C0;
+    border-bottom: 10px solid #691D6E;
+    border-right: 10px solid #691D6E;
+    padding: 2px;
+    width: 770px;
+    position: absolute;
+    top: 15px;
+
+}
+
+#bord2 {
+    border-top: 10px solid #691D6E;
+    border-left: 10px solid #691D6E;
+    border-bottom: 10px solid #C0C0C0;
+    border-right: 10px solid #C0C0C0;
+    padding: 10px;
+}
+
+h1,
+h2,
+p {
+    text-align: center;
+}
+
+#image_center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: -18px;
+}
+
+.text {
+    width: auto;
+    text-align: justify;
+    color: #BFBFBE;
+    margin-top: -15px;
+}

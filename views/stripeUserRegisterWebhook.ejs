@@ -1,0 +1,97 @@
+<!DOCTYPE html
+	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<title>Calc - Email Template</title>
+	<style type="text/css">
+		body {
+			background: #f3f6fa;
+			line-height: 18px;
+			margin: 0;
+			font-family: 'verdana', Helvetica, Arial, sans-serif !important;
+			color: #7c8081;
+			font-size: 14px;
+			line-height: 20px;
+			font-weight: 400
+		}
+
+		* {
+			margin: 0;
+			padding: 0;
+		}
+
+		a {
+			text-decoration: none
+		}
+
+		a,
+		img {
+			border: none;
+			outline: none;
+		}
+
+		.strong {
+			font-weight: bold
+		}
+
+		p {
+			margin: 0
+		}
+
+		table {
+			border-collapse: collapse !important;
+		}
+	</style>
+</head>
+
+<body style="margin: 0;padding: 0; box-sizing: border-box;font-family: sans-serif; color: #32325D;">
+    <div style=" min-height: 100vh; background-color: #f5f5f5;">
+        <div style="width: 100%; max-width: 80%;margin: auto;">
+            <div style="padding: 30px 0;">
+                <div style="width: 100%;text-align: center;margin-bottom: 30px;">
+                    <img src="<%= company_logo %>" alt="logo">
+                </div>
+                <div style="text-align: center; background-color: #fff; padding: 30px; border-radius: 10px;">
+                    <h1>Welcome!</h1>
+                    <div style="width: 100%;text-align: center;margin: 30px 0 0;">
+                        <img src="welcome.png" width="140px" alt="logo">
+                    </div>
+                    <div style="padding-top: 30px;display:inline-block;margin:auto;font-size: 14px;">
+                        <p style="text-align: left;">Thank you for choosing clac.</p><br/><br/>
+                        <p style="text-align: left"> Please go through the below link and complete the signup process.</p>
+                        <p style="text-align: left"><a href="<%= link %>">http://localhost:4200/#/newSubscription</a></p>
+                        <p style="text-align: left">Thank you</p>
+                    </div>
+                </div>
+                <div bgcolor="#211261" valign="top"
+                style="padding:20px 15px;text-align:justify;vertical-align:top;background-color:#211261;font-family:'verdana', Helvetica, Arial, sans-serif !important;color:#fff;font-size:14px;line-height:22px;font-weight:400;text-align:center">
+                <a href="" target="_blank" title="Facebook"
+                    style="display:inline-block;border:none;outline:none;width:32px;height:32px;vertical-align:top;margin:0 5px"><img
+                        src="<%= facebook_logo %>"
+                        style="margin:0;vertical-align:middle;border:none;outline:none;height:32px;width:32px"
+                        alt="Facebook" title="Facebook" /></a>
+                <a href="" target="_blank" title="LinkedIn"
+                    style="display:inline-block;border:none;outline:none;width:32px;height:32px;vertical-align:top;margin:0 5px"><img
+                        src="<%= linkedin_logo %>"
+                        style="margin:0;vertical-align:middle;border:none;outline:none;height:32px;width:32px"
+                        alt="LinkedIn" title="LinkedIn" /></a>
+                <a href="" target="_blank" title="Twitter"
+                    style="display:inline-block;border:none;outline:none;width:32px;height:32px;vertical-align:top;margin:0 5px"><img
+                        src="<%= twitter_logo %>"
+                        style="margin:0;vertical-align:middle;border:none;outline:none;height:32px;width:32px"
+                        alt="Twitter" title="Twitter" /></a>
+                <a href="" target="_blank" title="Instagram"
+                    style="display:inline-block;border:none;outline:none;width:32px;height:32px;vertical-align:top;margin:0 5px"><img
+                        src="<%= instagram_logo %>"
+                        style="margin:0;vertical-align:middle;border:none;outline:none;height:32px;width:32px"
+                        alt="Instagram" title="Instagram" /></a>
+            </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
