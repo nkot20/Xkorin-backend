@@ -1,0 +1,36 @@
+<html lang="">
+<head>
+    <style>
+        /* Ajoutez vos styles CSS ici */
+        .primary {
+            color: #1b1b98;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #1b1b98;
+            color: white!important;
+            text-decoration: none;
+            border-radius: 10px;
+        }
+        /*a{*/
+        /*    color: #1b1b98;*/
+        /*}*/
+    </style>
+    <title></title>
+</head>
+<body>
+
+<p>Bonjour <b>{{first_name}} {{last_name}}</b>,</p>
+<p>Dans le cadre de votre travail, vous trouverez, ci-dessous, les identifiants qui vous permettront de vous connecter à <b>CITYALERT</b>, l'application pour la gestion et la resolution des incidents. </p>
+<p>Email : <b class="primary">{{email}}</b></p>
+<p>Mot de passe provisoire : <b class="primary">{{password}}</b></p>
+
+<p>Bien vouloir cliquer sur le lien ci-dessous pour réinitialiser votre mot de passe : </p>
+<p><a href="{{resetLink}}" class="btn">Réinitialiser</a></p>
+
+<img src="data:image/png;base64,{{logoDSI}}" alt="logo CITYALERT">
+
+</body>
+</html>
+

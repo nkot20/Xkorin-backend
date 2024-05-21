@@ -1,0 +1,39 @@
+<html lang="">
+<head>
+    <style>
+        /* Ajoutez vos styles CSS ici */
+        .primary {
+            color: #1b1b98;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #1b1b98;
+            color: white!important;
+            text-decoration: none;
+            border-radius: 10px;
+        }
+        /*a{*/
+        /*    color: #1b1b98;*/
+        /*}*/
+    </style>
+    <title></title>
+</head>
+<body>
+
+<p>Bonjour <b>{{first_name}} {{last_name}}</b>,</p>
+<p>Un Nouvel incident a ete declare au sein de votre collectivite. Ci-dessous les informations.</p>
+<p>Type : <b class="primary">{{typeIncident}}</b></p>
+<p>Niveau de dangerousite : <b class="primary">{{dangerousity}}</b></p>
+<p>Niveau de desagrement : <b class="primary">{{desagreement}}</b></p>
+<p>Images :</p>
+<img src="{{imageLink}}" alt="Incident" width="200" height="200">
+
+<p>Pour plus d'informations, bien vouloir suivre le lien :</p>
+
+<p><a href="{{incidentLink}}" class="btn">Consulter</a></p>
+
+
+</body>
+</html>
+

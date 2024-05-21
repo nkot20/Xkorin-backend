@@ -1,0 +1,16 @@
+module.exports = {
+  EVENT_EMAIL_TEMPLATE: './views/sendeventmail.ejs',
+  COMPLIMENT_EMAIL_TEMPLATE: './views/complimentmail.ejs',
+  FRANCH_COMPLIMENT_EMAIL_TEMPLATE: './views/frComplimentmail.ejs',
+  ENGLISH_COMPLIMENT_EMAIL_TEMPLATE: './views/enComplimentmail.ejs',
+  FORGET_PASSWORD_TEMPLATE: './views/old/forgotpassword.ejs',
+  USER_REGISTER: './views/register.ejs',
+  EMPLOYEE_REGISTER: './views/employeeRegisterEmail.ejs',
+  CLIENT_ADMIN_INQIRY_EMAIL: './views/clientadmininqiryemail.ejs',
+  CORPORATE_OFFER_FORM: './views/corporateofferform.ejs',
+  SERVICE_ORDER_FORM: './views/serviceorderform.ejs',
+  SUGGESTION_EMAIL_TEMPLATE: './views/sendsuggestionmail.ejs',
+  CONTACT_US_TEMPLATE: './views/contactUsmail.ejs',
+  STRIPE_USER_REGISTER_WEBHOOK: './views/stripeUserRegisterWebhook.ejs',
+  ADMIN_USER_REGISTER: './views/adminuserregister.ejs',
+};
