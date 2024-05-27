@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const variableTranslationSchema = new mongoose.Schema({
     label: {
         type: String,
-        required: true,
     },
     type: {
       type: String,

@@ -164,6 +164,7 @@ class VariableRepository {
 
             datas.name = englishName[0].name;
             datas.problem = englishProblem[0].problem;
+
             const variable = await Variable.create(datas);
 
             if (!variable) {
@@ -173,15 +174,19 @@ class VariableRepository {
             await Promise.all(names.map(async (value) => {
                 const language = await Language.findOne({ isoCode: value.isoCode });
                 if (language) {
+                    if (definition.label === undefined)
+                        definition.label = '';
                     await VariableTranslation.create({ label: value.name, languageId: language._id, variableId: variable._id, type: 'Name' });
                     return language._id;
                 }
             }))
 
-            await Promise.all(problems.map(async (value) => {
-                const language = await Language.findOne({ isoCode: value.isoCode });
+            await Promise.all(problems.map(async (problem) => {
+                const language = await Language.findOne({ isoCode: problem.isoCode });
                 if (language) {
-                    await VariableTranslation.create({ label: value.label, languageId: language._id, variableId: variable._id, type: 'Problem' });
+                    if (problem.label === undefined)
+                        problem.label = '';
+                    await VariableTranslation.create({ label: problem.label, languageId: language._id, variableId: variable._id, type: 'Problem' });
                     return language._id;
                 }
             }))
@@ -199,6 +204,8 @@ class VariableRepository {
                 await Promise.all(definitions.map(async (definition) => {
                     const language = await Language.findOne({ isoCode: definition.isoCode });
                     if (language) {
+                        if (definition.label === undefined)
+                            definition.label = '';
                         await VariableTranslation.create({ label: definition.label, languageId: language._id, variableId: variable._id, type: 'Definition' });
                         return language._id;
                     }
@@ -297,7 +304,7 @@ class VariableRepository {
             await Promise.all(names.map(async (value) => {
                 const language = await Language.findOne({ isoCode: value.isoCode });
                 if (language) {
-                    const nameTranslated = await VariableTranslation.find({languageId: language._id, variableId: variable._id , type: 'Name'});
+                    const nameTranslated = await VariableTranslation.find({languageId: language._id, variableId: variableId , type: 'Name'});
                     if (nameTranslated.length === 0)
                         await VariableTranslation.create({languageId: language._id, variableId: variableId , type: 'Name', label: value.name})
                     else
@@ -309,8 +316,10 @@ class VariableRepository {
             await Promise.all(problems.map(async (value) => {
                 const language = await Language.findOne({ isoCode: value.isoCode });
                 if (language) {
-                    const problemTranslated = await VariableTranslation.find({languageId: language._id, variableId: variable._id , type: 'Problem'});
-                    console.log({problemTranslated})
+                    if (value.label === undefined)
+                        value.label = ' ';
+                    const problemTranslated = await VariableTranslation.find({languageId: language._id, variableId: variableId , type: 'Problem'});
+                    console.log({problemTranslated, value})
                     if (problemTranslated.length === 0)
                         await VariableTranslation.create({languageId: language._id, variableId: variableId , type: 'Problem', label: value.label})
                     else
@@ -322,9 +331,9 @@ class VariableRepository {
             if (datas.isFactor) {
                 //add variable definition in all system languages
                 await Promise.all(definitions.map(async (value) => {
-                    const language = await Language.findOne({ isoCode: definition.isoCode });
+                    const language = await Language.findOne({ isoCode: value.isoCode });
                     if (language) {
-                        const definitionTranslated = await VariableTranslation.find({languageId: language._id, variableId: variable._id , type: 'Definition'});
+                        const definitionTranslated = await VariableTranslation.find({languageId: language._id, variableId: variableId , type: 'Definition'});
                         if (definitionTranslated.length === 0)
                             await VariableTranslation.create({languageId: language._id, variableId: variableId , type: 'Definition', label: value.label})
                         else
@@ -350,21 +359,37 @@ class VariableRepository {
             if (!variable) {
                 throw new Error('Variable not found');
             }
+            const language = await Language.find();
 
             const names = await this.getTranslation(variable._id,'Name');
-            if (names.length === 0)
-                names.push({isoCode: 'en', name: variable.name});
+            if (names.length === 0) {
+                language.forEach(value => {
+                    if (value.isoCode === 'en')
+                        names.push({isoCode: 'en', name: variable.name});
+                    else
+                        problems.push({isoCode: value.isoCode, label: ''})
+                })
+            }
+
             const definitions = await this.getTranslation(variable._id,'Definition');
 
             const problems = await this.getTranslation(variable._id,'Problem');
             if (variable.isFactor){
                 if (definitions.length === 0) {
-                    definitions.push({isoCode: 'en', name: variable.definition})
+                    language.forEach(value => {
+                        definitions.push({isoCode: value.isoCode, label: ''})
+                    })
+
                 }
             }
             if (problems.length === 0) {
-                problems.push({isoCode: 'en', name: variable.problem})
+                if (definitions.length === 0) {
+                    language.forEach(value => {
+                        problems.push({isoCode: value.isoCode, label: ''})
+                    })
+                }
             }
+
 
             return {variable, names, definitions, problems};
         } catch (error) {

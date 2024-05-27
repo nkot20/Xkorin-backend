@@ -12,8 +12,8 @@ const validateSchema = require("../../../middlewares/validationSchema");
 // Route pour enregistrer une question et ses traductions
 router.post('/', async (req, res) => {
     try {
-        const { variableId, questions } = req.body;
-        const createdQuestion = await questionRepository.createQuestionWithTranslations(variableId, questions);
+        const { variableId, questions, datas } = req.body;
+        const createdQuestion = await questionRepository.createQuestionWithTranslations(variableId, questions, datas);
         res.status(201).send(createdQuestion);
     } catch (error) {
         logger.error("Error when creating the question and its translations:", error);
