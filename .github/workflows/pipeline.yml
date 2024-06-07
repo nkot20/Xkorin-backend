@@ -37,11 +37,10 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push backend image
-        uses: docker/build-push-action@v2
-        with:
-          context: ./backend
-          push: true
-          tags: nkot20/xkorin-backend:latest
+        run: |
+          docker build -t nkot20/xkorin-backend:latest .
+        env:
+          DOCKER_BUILDKIT: 1
 
   # unit-test:
   #   runs-on: ubuntu-latest
