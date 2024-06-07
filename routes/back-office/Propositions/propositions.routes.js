@@ -30,7 +30,7 @@ router.get('/:questionId', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const response = await propositionRepository.deteleProposition(req.params.id);
-        res.status(200).send("Prosition deleted");
+        res.status(200).json({message: 'Option deleted', response});
     } catch (error) {
         logger.error("Error when deleting the proposition and its translations for question:", error);
         res.status(500).json({ message: 'Internal server error' });

@@ -5,9 +5,6 @@ const questionSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    definition:  {
-        type: String,
-    },
     type: {
         type: String,
         enum: ['radio', 'checkbox'],
@@ -17,7 +14,8 @@ const questionSchema = new mongoose.Schema({
         type: Boolean,
         defautl: false,
     },
-    variableId: { type: mongoose.Schema.Types.ObjectId, ref: 'variables' }
+    variableId: { type: mongoose.Schema.Types.ObjectId, ref: 'variables' },
+    profilId: { type: mongoose.Schema.Types.ObjectId, ref: 'profils' }
 }, { timestamps: true });
 
 const question = mongoose.model('question', questionSchema);

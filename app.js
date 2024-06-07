@@ -77,7 +77,7 @@ const waffConfig = {
         regex: /BadBot/i,
         target: 'headers',
         action: 'block',
-      },
+      },+
       {
         id: '1008',
         message: 'Custom rule: Block XSS attempts',
