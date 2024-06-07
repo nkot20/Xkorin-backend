@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: my-node-app-backend
+    environment:
+      - MONGODB_URI=/run/secrets/mongodb_uri
+      - NODE_ENV=development
+      - PORT=4005
+    secrets:
+      - mongodb_uri
+    networks:
+      - mongo-network
+    ports:
+      - "4005:4005"
+
+secrets:
+  mongodb_uri:
+    external: true
+
+networks:
+  mongo-network:
+    external: true
