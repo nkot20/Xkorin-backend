@@ -174,8 +174,8 @@ class VariableRepository {
             await Promise.all(names.map(async (value) => {
                 const language = await Language.findOne({ isoCode: value.isoCode });
                 if (language) {
-                    if (definition.label === undefined)
-                        definition.label = '';
+                    if (value.label === undefined)
+                        value.label = '';
                     await VariableTranslation.create({ label: value.name, languageId: language._id, variableId: variable._id, type: 'Name' });
                     return language._id;
                 }
