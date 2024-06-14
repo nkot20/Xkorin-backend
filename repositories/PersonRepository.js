@@ -11,6 +11,15 @@ class PersonRepository {
             throw error;
         }
     }
+
+    async findPersonByEmail(email){
+        try {
+            return await Person.findOne({email});
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
 }
 
 const personRepository = new PersonRepository();

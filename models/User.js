@@ -7,14 +7,11 @@ const { Schema } = require('mongoose');
 const Roles = require('../config/role');
 
 const UserSchema = new mongoose.Schema({
-  first_name: {
+  name: {
     type: String,
     // required: true,
   },
-  last_name: {
-    type: String,
-    // required: true,
-  },
+
   email: {
     type: String,
     required: false,

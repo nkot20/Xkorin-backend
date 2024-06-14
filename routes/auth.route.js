@@ -9,6 +9,7 @@ const logger = require('../logger');
 const ROLE = require('../config/role');
 const companyRepository = require('../repositories/companyRepository');
 const authService = require('../services/AuthService');
+const personRepository = require('../repositories/PersonRepository');
 
 const timestamp = new Date();
 
@@ -56,7 +57,7 @@ const generateRefreshToken = (user) => {
   return jwt.sign(payload, config.parsed.JWT_SECRET, { expiresIn: '7d' });
 };
 
-router.post('/login', validateSchema(loginSchema), async (req, res, next) => {
+router.post('/sign-in', validateSchema(loginSchema), async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -92,12 +93,15 @@ router.post('/login', validateSchema(loginSchema), async (req, res, next) => {
           timestamp,
         });
         if (hasRole(user.role, ROLE.COMPANY_ADMIN)) {
-          const company = await companyRepository.getCompanyByIdUserManager(user.id)
-          res.json({
-            message: 'Authentication successful', accessToken, refreshToken, user, company
+          const person = await personRepository.findPersonByEmail(user.email)
+          const company = await companyRepository.getCompany(person.company_id)
+          user.company = company;
+          user.person = person;
+          return res.json({
+            message: 'Authentication successful', accessToken, refreshToken, user
           });
         } else {
-          res.json({
+          return res.json({
             message: 'Authentication successful', accessToken, refreshToken, user,
           });
         }
@@ -134,7 +138,7 @@ router.post('/sign-up', validateSchema(registerSchema), async (req, res) => {
     const person = await authService.register(req.body);
     logger.info(`Registration successful for user ${person.email}`, { user_email: person.email,  });
     return res.json({ message: 'Registration successful' });
-  } catch (e) {
+  } catch (err) {
     logger.error('Internal server error', { error: err });
     return res.status(400).json({ message: 'Registration failed', error: err });
   }
@@ -149,12 +153,21 @@ router.get('/meTest', authMiddleware.authenticate, (req, res) => {
   res.json(req.user);
 });
 
-router.post('/sign-in-with-token', passport.authenticate('jwt', { session: false }), (req, res) => {
+router.post('/sign-in-with-token', passport.authenticate('jwt', { session: false }), async (req, res) => {
   const accessToken = generateAccessToken(req.user);
 
   logger.info('Authentication with token successful', { timestamp });
+  if (hasRole(req.user.role, ROLE.COMPANY_ADMIN)) {
+    const person = await personRepository.findPersonByEmail(req.user.email);
+    const company = await companyRepository.getCompany(person.company_id)
+    let user = req.user;
+    user.company = company;
+    user.person = person;
+    return res.json({ message: 'Authentication successful', accessToken, user});
+  } else {
+    return res.json({ message: 'Authentication with token successful', accessToken, user: req.user });
+  }
 
-  res.json({ message: 'Authentication with token successful', accessToken, user: req.user });
 });
 
 // Route to refresh the access token using the refresh token
@@ -235,14 +248,14 @@ router.post('/confirm-email', validateSchema(validateEmailSchema), (req, res) =>
   try {
     const { token } = req.body;
 
-    authController.confirmEmail(token).then((result) => {
+    authService.isTokenValid(token).then((result) => {
       logger.info('Email confirmed successful', { timestamp });
 
       res.json({ message: 'Email confirmed successful', user: result });
     }).catch((err) => {
       logger.error('Error confriming Email', { error: err, timestamp });
       // console.log('Error resetting password', err);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: err });
     });
   } catch (err) {
     logger.error('Internal server error', { error: err, timestamp });

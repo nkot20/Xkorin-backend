@@ -10,9 +10,6 @@ const companySchema = Schema({
     type: String,
     required: true,
   },
-  legalForm: {
-    type: String,
-  },
   email: {
     type: String,
   },
@@ -27,8 +24,8 @@ const companySchema = Schema({
   },
   address: {
     rue: { type: String},
-    ville: { type: String},
-    pays: { type: String}
+    city: { type: String},
+    country: { type: String}
   },
   customization: {
     primaryColor: {
