@@ -7,7 +7,6 @@ const { Schema } = require('mongoose');
 const Roles = require('../config/role');
 
 const UserSchema = new mongoose.Schema({
-  company_id: [{ type: Schema.Types.ObjectId, ref: 'company' }],
   first_name: {
     type: String,
     // required: true,
@@ -16,20 +15,12 @@ const UserSchema = new mongoose.Schema({
     type: String,
     // required: true,
   },
-  user_name: {
-    type: String,
-    required: false,
-  },
   email: {
     type: String,
     required: false,
   },
   password: {
     type: String,
-    required: false,
-  },
-  birthdate: {
-    type: Date,
     required: false,
   },
   resetToken: {

@@ -151,7 +151,7 @@ class CompanyRepository {
     }
   }
 
-  async createCompany(data, status = 'active') {
+  async createCompany(data) {
     try {
       const company = new Company(data);
       return await company.save();

@@ -43,7 +43,7 @@ class EmailService {
         const mailOptions = {
             from: process.env.MAIL_SOURCE,
             to: data.email,
-            subject: 'Création compte CITYALERT',
+            subject: 'Création compte Xkorin / Creating account Xkorin',
             html: emailContent
         };
 
@@ -83,7 +83,7 @@ class EmailService {
         const mailOptions = {
             from: process.env.MAIL_SOURCE,
             to: data.email,
-            subject: 'Confirm your e-mail address, TrustX',
+            subject: 'Confirm your e-mail address, Xkorin',
             html: emailContent
         };
 

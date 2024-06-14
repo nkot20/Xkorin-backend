@@ -7,38 +7,21 @@ const { Schema } = require('mongoose');
 const Roles = require('../config/role');
 
 const PersonSchema = new mongoose.Schema({
-  company_id: [{ type: Schema.Types.ObjectId, ref: 'company' }],
-  first_name: {
+  company_id: [{ type: Schema.Types.ObjectId, ref: 'companies' }],
+  profil_id: [{ type: Schema.Types.ObjectId, ref: 'profils' }],
+  subcategory_id: [{ type: Schema.Types.ObjectId, ref: 'subcategories' }],
+  user_id: [{ type: Schema.Types.ObjectId, ref: 'users' }],
+  name: {
     type: String,
     // required: true,
-  },
-  last_name: {
-    type: String,
-    // required: true,
-  },
-  user_name: {
-    type: String,
-    required: false,
   },
   email: {
     type: String,
     required: false,
   },
-
   birthdate: {
     type: Date,
     required: false,
-  },
-
-  status: {
-    type: String,
-    enum: ['Active', 'Inactive'],
-    default: 'Active',
-    required: true,
-  },
-  otp: {
-    type: String,
-    default: 0,
   },
   gender: {
     type: String,
@@ -58,16 +41,6 @@ const PersonSchema = new mongoose.Schema({
   updated_date: {
     type: Date,
     default: Date.now(),
-  },
-  avatar: {
-    type: String,
-    default: '',
-  },
-  // roles: { type: Schema.Types.ObjectId, ref: 'Roles' },
-  user_address: {
-    rue: { type: String},
-    ville: { type: String},
-    pays: { type: String}
   },
   matrimonial_status: {
     type: String,
