@@ -7,6 +7,9 @@ const imprintSchema = new mongoose.Schema({
     },
     color: {
         type: String,
+    },
+    number: {
+        type: Number,
     }
 }, { timestamps: true });
 

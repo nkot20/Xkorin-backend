@@ -7,7 +7,7 @@ const authMiddleware = require('../middlewares/authenticate.middleware');
 const User = require('../models/User');
 const logger = require('../logger');
 const ROLE = require('../config/role');
-const companyRepository = require('../repositories/companyRepository');
+const companyRepository = require('../repositories/CompanyRepository');
 const authService = require('../services/AuthService');
 const personRepository = require('../repositories/PersonRepository');
 
@@ -94,11 +94,14 @@ router.post('/sign-in', validateSchema(loginSchema), async (req, res, next) => {
         });
         if (hasRole(user.role, ROLE.COMPANY_ADMIN)) {
           const person = await personRepository.findPersonByEmail(user.email)
-          const company = await companyRepository.getCompany(person.company_id)
-          user.company = company;
-          user.person = person;
+          const company = await companyRepository.getCompany(person.company_id[0]);
+          let newUser = user._doc
+          newUser = Object.assign({}, newUser, {
+            company: company,
+            person: person
+          });
           return res.json({
-            message: 'Authentication successful', accessToken, refreshToken, user
+            message: 'Authentication successful', accessToken, refreshToken, user: newUser
           });
         } else {
           return res.json({
@@ -159,7 +162,7 @@ router.post('/sign-in-with-token', passport.authenticate('jwt', { session: false
   logger.info('Authentication with token successful', { timestamp });
   if (hasRole(req.user.role, ROLE.COMPANY_ADMIN)) {
     const person = await personRepository.findPersonByEmail(req.user.email);
-    const company = await companyRepository.getCompany(person.company_id)
+    const company = await companyRepository.getCompany(person.company_id[0])
     let user = req.user;
     user.company = company;
     user.person = person;

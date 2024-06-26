@@ -5,13 +5,19 @@ const { Schema } = mongoose;
 const aggregatePaginate = require('mongoose-aggregate-paginate-v2');
 
 const examSchema = Schema({
-    organizationId: { type: Schema.Types.ObjectId, ref: 'organizations' },
-    usagerId: { type: Schema.Types.ObjectId, ref: 'usager' },
-    goal: {
+    institutionId: { type: Schema.Types.ObjectId, ref: 'institution' },
+    personId: { type: Schema.Types.ObjectId, ref: 'person' },
+    aim: {
         type: String,
         enum: ['Financing', 'Upgrading', 'Support']
+    },
+    amount : {
+        type: Number,
+    },
+    audited: {
+        type: Boolean,
+        default: false,
     }
-
 }, { timestamps: true });
 
 // Function to generate a random alphanumeric string of a given length

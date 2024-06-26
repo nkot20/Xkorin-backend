@@ -5,6 +5,7 @@ const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
 const validateSchema = require("../../../middlewares/validationSchema");
+const subCategoryImprintRepository = require("../../../repositories/SubCategoryImprintRepository");
 
 
 router.post('/', async (req, res) => {
@@ -29,16 +30,25 @@ router.get('/', async (req, res) => {
 });
 
 //get all by language isoCode
-router.get('/:idCategory/:isoCode', async (req, res) => {
+router.get('/:categoryId/:isoCode', async (req, res) => {
     try {
-        console.log(req.params)
-        const response = await subCategoryRepository.getAllByLangageAndCategory(req.params.isoCode, req.params.idCategory);
+        const response = await subCategoryRepository.getAllByLangageAndCategory(req.params.isoCode, req.params.categoryId);
         res.status(201).send(response);
     } catch (error) {
         logger.error("Error when getting categories by language isoCode and her translations", error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ message: error.message });
     }
 });
+
+// add imprint to subcategory
+router.post('/imprint/:subcategoryId/', async (req, res) => {
+    try {
+       const response = await subCategoryImprintRepository.create(req.body.imprintId, req.params.subcategoryId);
+        res.status(201).send(response);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+})
 
 
 

@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const Quiz = require('../models/Examen');
+const Quiz = require('../models/Exam');
 
 const {ObjectId} = require("mongodb");
 

@@ -12,7 +12,7 @@ const questionSchema = new mongoose.Schema({
     },
     weighting: { /// to know if question is an exam question with points or it's just to get information (factor weight or information)
         type: Boolean,
-        defautl: false,
+        default: false,
     },
     variableId: { type: mongoose.Schema.Types.ObjectId, ref: 'variables' },
     profilId: { type: mongoose.Schema.Types.ObjectId, ref: 'profils' }

@@ -1,4 +1,4 @@
-const companyRepository = require('../repositories/companyRepository');
+const companyRepository = require('../repositories/CompanyRepository');
 const userRepository = require('../repositories/UserRepository');
 const personRepository = require('../repositories/PersonRepository');
 const User = require("../models/User");
