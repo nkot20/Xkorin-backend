@@ -1,10 +1,7 @@
 require('dotenv').config();
 const Profil = require('../models/Profil');
 const ProfilTranslation = require('../models/ProfilTranslation')
-const Question = require("../models/Question");
 const Language = require("../models/Language");
-const QuestionTranslation = require("../models/QuestionTranslation");
-const PropositionTranslation = require("../models/PropositionTranslation");
 
 class ProfilRepository {
     async create(translations) {
@@ -46,6 +43,24 @@ class ProfilRepository {
             throw error;
         }
     }
+
+    async getAllByLanguage(isoCode) {
+        try {
+            const language = await Language.findOne({isoCode});
+            const profils = await Profil.find();
+            let response = [];
+            await Promise.all(profils.map(async (profil) => {
+                const profilTranslation = await ProfilTranslation.findOne({profilId: profil._id, languageId: language._id});
+                profil.label = profilTranslation.label;
+                response.push(profil);
+            }))
+            return response;
+        } catch (error) {
+            console.error("Something went to wrong: ", error);
+            throw error;
+        }
+    }
+
 
 
     async getProfilById(id) {

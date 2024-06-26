@@ -1,7 +1,7 @@
 require('dotenv').config();
 const Answer = require('../models/Answer');
 const Usager = require('../models/Usager');
-const Quiz = require('../models/Examen');
+const Quiz = require('../models/Exam');
 const calculPointRepository = require('../repositories/CaculPointRepository');
 const {ObjectId} = require("mongodb");
 const Helper = require('../common/Helper');

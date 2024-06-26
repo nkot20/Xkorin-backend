@@ -92,6 +92,25 @@ class CompanyRepository {
     }
   }
 
+  async getCompanyByName(name) {
+    try {
+      // Retrieve the Company document
+      const company = await Company.findOne({name});
+
+      if (!company) {
+        return null;
+      }
+
+      // Retrieve all users belonging to the Company based on the companyId field
+      // const users = await User.find({ business_code: Company.business_code });
+
+      return company;
+    } catch (error) {
+      console.log('Get Company by Id error', error);
+      throw error;
+    }
+  }
+
   async getCompanyUsers(id, options) {
     try {
       const regex = new RegExp(options.search, 'i');
@@ -151,7 +170,7 @@ class CompanyRepository {
     }
   }
 
-  async createCompany(data, status = 'active') {
+  async createCompany(data) {
     try {
       const company = new Company(data);
       return await company.save();

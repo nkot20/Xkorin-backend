@@ -17,7 +17,7 @@ module.exports = class EmailSenderClass {
     const emailSetting = await SettingService.list();
 
     function EmailValueGetter(value) {
-      return emailSetting.filter((element) => element.key == value)[0].value;
+      return emailSetting.filter((element) => element.key === value)[0].value;
     }
 
     return new Promise((resolve, reject) => {

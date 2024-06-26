@@ -4,6 +4,7 @@ const config = require('../config/config.js');
 //Required package
 const pdf = require("pdf-creator-node");
 const fs = require("fs");
+const path = require('path');
 // Read HTML Template
 const template = fs.readFileSync("./templates/Certificat/page.html", "utf8");
 const QRCode = require('qrcode');
@@ -208,6 +209,24 @@ module.exports = class Helper {
     } catch (error) {
       throw error;
     }
+  }
+
+  /**
+   * Convert an image file to a Base64 encoded string.
+   * @param {string} filePath - Path to the image file.
+   * @return {Promise<string>} - A promise that resolves to the Base64 string.
+   */
+  static imageToBase64(filePath) {
+    return new Promise((resolve, reject) => {
+      fs.readFile(filePath, (err, data) => {
+        if (err) {
+          return reject(err);
+        }
+        // Convert binary data to base64
+        const base64Image = data.toString('base64');
+        resolve(base64Image);
+      });
+    });
   }
 
 };

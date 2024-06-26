@@ -10,59 +10,29 @@ const companySchema = Schema({
     type: String,
     required: true,
   },
-  address: {
-    type: String,
-    required: true,
-  },
-  additionalAddress: {
-    type: String,
-    required: false,
-  },
-  legalForm: {
-    type: String,
-    required: true,
-  },
   email: {
     type: String,
-    required: true,
   },
   status: {
     type: String,
     enum: ['Active', 'Inactive', 'NeedsValidation'],
-    default: 'active',
+    default: 'Active',
     required: true,
   },
   phoneNumber: {
     type: String,
-    required: true,
+  },
+  address: {
+    rue: { type: String},
+    city: { type: String},
+    country: { type: String}
   },
   customization: {
-    primaryColor: {
-      type: String,
-      default: '',
-    },
-    secondaryColor: {
-      type: String,
-      default: '',
-    },
     logo: {
       type: String,
       default: '',
     },
-    backgroundImage: {
-      type: String,
-      default: '',
-    },
-    bannerImage: {
-      type: String,
-      default: '',
-    },
-  },
-  domain: {
-    type: String,
-  },
-  ville: {
-    type: [String],
+
   },
   agreements: {
     type: Boolean,
@@ -86,27 +56,6 @@ function generateRandomString(length) {
   return result;
 }
 
-companySchema.pre('save', async function (next) {
-  console.log(this.business_code);
-  if (!this.business_code) {
-    let uniqueCode = generateRandomString(10);
-    const count = await this.constructor.countDocuments({ business_code: uniqueCode });
-    if (count === 0) {
-      this.business_code = uniqueCode;
-    } else {
-      while (true) {
-        console.log('Generating new string');
-        uniqueCode = generateRandomString(10);
-        const newCount = await this.constructor.countDocuments({ business_code: uniqueCode });
-        if (newCount === 0) {
-          this.business_code = uniqueCode;
-          break;
-        }
-      }
-    }
-  }
-  next();
-});
 
 
 companySchema.plugin(aggregatePaginate);

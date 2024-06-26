@@ -1,5 +1,4 @@
-const UserModel = require('../models/user');
-const User = require('../models/user');
+const User = require('../models/User');
 
 //const logger = require('../logger');
 
@@ -8,7 +7,7 @@ const timestamp = new Date();
 const userRepository = {
   async getUserByEmail(email) {
     try {
-      return await UserModel.findOne({email});
+      return await User.findOne({email});
     } catch (error) {
       console.error(error);
       throw error;
@@ -22,7 +21,7 @@ const userRepository = {
      */
   async getUserByTypeAndHandle(handle, type) {
     try {
-      return await UserModel.findOne({[type]: handle});
+      return await User.findOne({[type]: handle});
     } catch (error) {
       console.error(error);
       throw error;
@@ -31,7 +30,7 @@ const userRepository = {
 
   async getUserByPhone(phone) {
     try {
-      return await UserModel.findOne({mobile_no: phone});
+      return await User.findOne({mobile_no: phone});
     } catch (error) {
       console.error(error);
       throw error;
@@ -40,7 +39,7 @@ const userRepository = {
 
   async getUserById(userId) {
     try {
-      return await UserModel.findOne({_id: userId});
+      return await User.findOne({_id: userId});
     } catch (error) {
       console.error(error);
       throw error;
@@ -49,7 +48,7 @@ const userRepository = {
 
   async createUser(data) {
     try {
-      const newUser = new UserModel(data);
+      const newUser = new User(data);
       //logger.info('User created successfully', { result, timestamp });
       return await newUser.save();
     } catch (error) {
@@ -61,7 +60,7 @@ const userRepository = {
 
   async updateUser(userId, data) {
     try {
-      return await UserModel.findOneAndUpdate({_id: userId}, data, {new: true});
+      return await User.findOneAndUpdate({_id: userId}, data, {new: true});
     } catch (error) {
       console.error(error);
       throw error;
@@ -70,7 +69,7 @@ const userRepository = {
 
   async getByCompany(companyId) {
     try {
-      return await UserModel.find({company_id: companyId});
+      return await User.find({company_id: companyId});
     } catch (error) {
       console.error(error);
       throw error;

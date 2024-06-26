@@ -5,7 +5,6 @@ const Variable = require('../models/Variable');
 const Weight = require('../models/Weight');
 const Question = require('../models/Question');
 const Proposition = require('../models/Proposition');
-const DefinitionTranslation = require('../models/DefinitionTranslation');
 const Language = require("../models/Language");
 const QuestionTranslation = require("../models/QuestionTranslation");
 const VariableTranslation = require("../models/VariableTranslation");
@@ -365,9 +364,9 @@ class VariableRepository {
             if (names.length === 0) {
                 language.forEach(value => {
                     if (value.isoCode === 'en')
-                        names.push({isoCode: 'en', name: variable.name});
+                        names.push({isoCode: 'en', label: variable.name});
                     else
-                        problems.push({isoCode: value.isoCode, label: ''})
+                        names.push({isoCode: value.isoCode, label: ''})
                 })
             }
 

@@ -18,7 +18,7 @@ const templateNotification = Handlebars.compile(sourceNotification);
 class EmailService {
 
     //Configuration de nodemailer pour l'envoi d'e-mails
-    transporter = nodemailer.createTransport({
+    /*transporter = nodemailer.createTransport({
         service: process.env.MAIL_SERVICE,
         host: process.env.MAIL_HOST,
         port: process.env.MAIL_PORT,
@@ -27,14 +27,13 @@ class EmailService {
             user: process.env.MAIL_SOURCE,
             pass: process.env.MAIL_KEY
         }
-    });
+    });*/
 
-     /*transporter = nodemailer.createTransport({
-
+     transporter = nodemailer.createTransport({
         host: process.env.MAIL_HOST,
         port: process.env.MAIL_PORT,
         secure: false,
-    });*/
+    });
 
     sendMailForConnection = (data) => {
 
@@ -43,7 +42,7 @@ class EmailService {
         const mailOptions = {
             from: process.env.MAIL_SOURCE,
             to: data.email,
-            subject: 'Création compte CITYALERT',
+            subject: 'Création compte Xkorin / Creating account Xkorin',
             html: emailContent
         };
 
@@ -83,7 +82,7 @@ class EmailService {
         const mailOptions = {
             from: process.env.MAIL_SOURCE,
             to: data.email,
-            subject: 'Confirm your e-mail address, TrustX',
+            subject: 'Confirm your e-mail address, Xkorin',
             html: emailContent
         };
 

@@ -7,7 +7,7 @@ const authMiddleware = require('../../middlewares/authenticate.middleware');
 const User = require('../../models/User');
 const logger = require('../../logger');
 const ROLE = require('../../config/role');
-const companyRepository = require('../../repositories/companyRepository');
+const companyRepository = require('../../repositories/CompanyRepository');
 
 const timestamp = new Date();
 
