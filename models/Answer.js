@@ -1,13 +1,10 @@
 const mongoose = require('mongoose');
 
 const answerSchema = new mongoose.Schema({
-    propositionId: { type: mongoose.Schema.Types.ObjectId, ref: 'propositions' },
-    usagerId: { type: mongoose.Schema.Types.ObjectId, ref: 'usagers' },
-    quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'quizzes' },
-    value: {
-        type: Boolean,
-        require: true
-    }
+    questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'questions' },
+    optionId: { type: mongoose.Schema.Types.ObjectId, ref: 'options' },
+    examId: { type: mongoose.Schema.Types.ObjectId, ref: 'exams' },
+
 }, { timestamps: true });
 
 const answer = mongoose.model('answer', answerSchema);

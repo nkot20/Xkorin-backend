@@ -17,7 +17,12 @@ const examSchema = Schema({
     audited: {
         type: Boolean,
         default: false,
-    }
+    },
+    completed: {
+        type: Boolean,
+        default: false,
+    },
+
 }, { timestamps: true });
 
 // Function to generate a random alphanumeric string of a given length
