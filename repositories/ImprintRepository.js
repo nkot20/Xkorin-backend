@@ -10,6 +10,7 @@ const QuestionTranslation = require("../models/QuestionTranslation");
 const VariableTranslation = require("../models/VariableTranslation");
 const PropositionTranslation = require("../models/PropositionTranslation");
 const subcategoryImprintRepository = require("../repositories/SubCategoryImprintRepository");
+const {ObjectId} = require("mongodb");
 
 
 
@@ -67,10 +68,8 @@ class ImprintRepository {
                 };
             });
 
-            const responseArray = await Promise.all(responsePromises);
-
             // Retourner un tableau d'objets comme requis
-            return responseArray;
+            return await Promise.all(responsePromises);
         } catch (error) {
             console.error(error);
             throw new Error('An error occurred while fetching the variables.');
@@ -100,8 +99,17 @@ class ImprintRepository {
                     imprintId: imprint._id,
                     parent: null
                 });
+                // ce tableau qui va contenir les variables et leur fils
+                const variablesWithFirstChild = [];
+                await Promise.all(variables.map(async (variable) => {
+                    const firstsChild = await Variable.find({parent: ObjectId(variable._id)});
+                    const orphanVariables = await this.getLastChildrenForOrphans(firstsChild, languageId);
 
-                const orphanVariables = await this.getLastChildrenForOrphans(variables, languageId);
+                    variablesWithFirstChild.push({
+                        variable,
+                        children: orphanVariables
+                    })
+                }))
 
                 // Fonction pour récupérer la traduction d'une question
                 const getTranslatedQuestionForVariable = async (variableId) => {
@@ -122,21 +130,32 @@ class ImprintRepository {
                     return questionsTranslation;
                 };
 
-                // Utiliser `Promise.all` pour traiter chaque orphelin en parallèle
-                const updatedOrphanVariables = await Promise.all(orphanVariables.map(async (orphan) => {
+
+                // Utiliser `Promise.all` pour traiter chaque orphelin en parallèle afin de trouver les variables fueilles de chaque variable racine
+                const updatedOrphanVariables = await Promise.all(variablesWithFirstChild.map(async (variable) => {
+                    console.log(variable)
                     // Utiliser `Promise.all` pour traiter chaque `lastChildren` en parallèle
-                    const updatedLastChildren = await Promise.all(orphan.lastChildren.map(async (child) => {
-                        const questions = await getTranslatedQuestionForVariable(child._id);
+                    const updatedLastChildren = await Promise.all(variable.children.map(async (child) => {
+                        console.log(child)
+                        const newChild = await Variable.findById(child._id);
+                        const lastChildren = await Promise.all(child.lastChildren.map(async (child) => {
+                            const questions = await getTranslatedQuestionForVariable(child._id);
+                            return {
+                                ...child,
+                                questions
+                            };
+                        }))
+                        child.lastChildren = lastChildren;
+                        child.name = newChild.name;
                         return {
-                            ...child,
-                            questions
-                        };
+                            ...child
+                        } ;
+
                     }));
 
-                    return {
-                        ...orphan,
-                        lastChildren: updatedLastChildren
-                    };
+                    variable.children = updatedLastChildren
+
+                    return variable;
                 }));
 
                 variablesWithImprints.push({
