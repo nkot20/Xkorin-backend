@@ -4,11 +4,13 @@ const Imprint = require('../models/Imprint');
 const Variable = require('../models/Variable');
 const Factor = require('../models/Factor');
 const Question = require('../models/Question');
-const Proposition = require('../models/Proposition');
+const Option = require('../models/Option');
 const Language = require("../models/Language");
 const QuestionTranslation = require("../models/QuestionTranslation");
 const VariableTranslation = require("../models/VariableTranslation");
 const PropositionTranslation = require("../models/PropositionTranslation");
+const Answer = require("../models/Answer");
+const Exam = require("../models/Exam");
 const subcategoryImprintRepository = require("../repositories/SubCategoryImprintRepository");
 const {ObjectId} = require("mongodb");
 
@@ -266,9 +268,268 @@ class ImprintRepository {
         }
     }
 
+    async buildVariableTree(examId){
+        try {
+           const imprints = await Imprint.find();
+           let response = [];
+
+           await Promise.all(imprints.map(async (imprint) => {
+               const {isAvailable, variables} = await this.buildVariableTreeForImprint(imprint.id, examId);
+               response.push({imprint, isAvailable, variables});
+           }));
+           return response;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async buildVariableTreeForImprint(imprintId, examId) {
+        try {
+            // Étape 1 : Récupérer toutes les variables associées à l'empreinte
+            const variables = await Variable.find({ imprintId }).lean();
+            const variableMap = {};
+            variables.forEach(variable => {
+                variableMap[variable._id] = {
+                    ...variable,
+                    children: [],
+                    value: 0
+                };
+            });
+
+            // Étape 2 : Construire la structure de l'arbre
+            let rootVariables = [];
+            variables.forEach(variable => {
+                if (variable.parent) {
+                    if (variableMap[variable.parent]) {
+                        variableMap[variable.parent].children.push(variableMap[variable._id]);
+                    }
+                } else {
+                    rootVariables.push(variableMap[variable._id]);
+                }
+            });
+
+            // Étape 3 : Calculer les valeurs des variables feuilles
+            const leafVariables = Object.values(variableMap).filter(variable => variable.children.length === 0);
+
+            // Étape 4 : Calculer les valeurs des variables feuilles
+            let countAnswer = 0;
+            await Promise.all(leafVariables.map(async variable => {
+                const questions = await Question.find({ variableId: variable._id, weighting: false }).lean();
+                const values = await Promise.all(questions.map(async question => {
+                    if (!question.weighting) {
+                        const answer = await Answer.findOne({ questionId: question._id, examId }).lean();
+                        if (answer) {
+                            countAnswer ++;
+                            const option = await Option.findById(answer.optionId).lean();
+                            return option.value;
+                        } else {
+                            return 0;
+                        }
 
 
+                    }
+                }));
+                variable.value = values[0];
+            }));
+
+            if (countAnswer === leafVariables.length)
+                console.log("Completed")
+
+            // Étape 5 : Calculer les valeurs des variables parentales
+            async function calculateParentValues(variable) {
+                if (variable.children.length > 0) {
+                    await Promise.all(variable.children.map(calculateParentValues));
+
+                    const totalValue = variable.children.reduce((sum, child) => sum + (child.value), 0);
+                    variable.value = Math.ceil(totalValue / variable.children.length);
+                }
+            }
+            await Promise.all(rootVariables.map(calculateParentValues));
+
+            // Étape 6 : Construire le sous-arbre avec les variables racines et leurs feuilles
+            // Étape 6 : Construire le sous-arbre avec les variables racines et leurs premiers fils
+            function getRootWithFirstChildren(variable) {
+                return {
+                    ...variable,
+                    children: variable.children
+                };
+            }
+
+            // Retourner les variables racines avec uniquement leurs feuilles
+
+            return {isAvailable: ((countAnswer === leafVariables.length) && leafVariables.length > 0), variables: rootVariables.map(getRootWithFirstChildren)};
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
+
+    async calulateImprintValue(imprintId, examId) {
+        try {
+            // Étape 1 : Récupérer toutes les variables associées à l'empreinte
+            const variables = await Variable.find({ imprintId }).lean();
+            const variableMap = {};
+            variables.forEach(variable => {
+                variableMap[variable._id] = {
+                    ...variable,
+                    children: [],
+                    weight: variable.dafaultWeight || 0,
+                    value: 0
+                };
+            });
+
+
+            // Étape 3 : récupérer les poids des variables feuilles
+            const leafVariables = variables.filter(variable => variable.children.length === 0);
+
+            await Promise.all(leafVariables.map(async variable => {
+                const questions = await Question.find({ variableId: variable._id, weighting: true }).lean();
+                const weights = await Promise.all(questions.map(async question => {
+                    if (question.weighting) {
+                        const answer = await Answer.findOne({ questionId: question._id, examId }).lean();
+                        if (answer) {
+                            const option = await Option.findById(answer.optionId).lean();
+                            return option.value;
+                        } else {
+                            return 0;
+                        }
+                    }
+                }));
+                variable.weight = weights[0];
+            }));
+
+
+            // Étape 5 : Récupérer les valeurs des variables feuilles
+            await Promise.all(leafVariables.map(async variable => {
+                const questions = await Question.find({ variableId: variable._id, weighting: false }).lean();
+                const values = await Promise.all(questions.map(async question => {
+                    if (!question.weighting) {
+                        const answer = await Answer.findOne({ questionId: question._id, examId }).lean();
+                        if (answer) {
+                            const option = await Option.findById(answer.optionId).lean();
+                            return option.value;
+                        } else {
+                            return 0;
+                        }
+                    }
+                }));
+                variable.value = values[0];
+            }));
+
+            const totalWeight = leafVariables.reduce((sum, variable) => sum + variable.weight, 0);
+
+            // Retourner l'arbre des variables
+             return Math.ceil((leafVariables.reduce((sum, variable) => sum + (variable.weight / totalWeight) * variable.value, 0)/7)*1216);
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
+
+    async getConfidenceIndex(examId){
+        try {
+            const imprints = await Imprint.find();
+            let response = [];
+
+            await Promise.all(imprints.map(async (imprint) => {
+                const value = await this.calulateImprintValue(imprint.id, examId);
+                response.push(value);
+            }));
+            return response.reduce((sum, value) => sum + value, 0);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async calculateImprintStatisticsForAllExams() {
+        try {
+            // Étape 1 : Récupérer tous les examens
+            const exams = await Exam.find().lean(); // Changez 'Exam' par votre modèle réel pour les examens
+
+            // Étape 2 : Récupérer toutes les empreintes
+            let imprints = await Imprint.find().lean(); // Changez 'Imprint' par votre modèle réel pour les empreintes
+            imprints = imprints.sort((a, b) =>{
+                if ( a.number < b.number)
+                    return -1;
+                else
+                    return 1;
+            });
+            console.log(imprints)
+            // Dictionnaire pour stocker les valeurs des empreintes pour chaque examen
+            const imprintValuesMap = {};
+
+            // Étape 3 : Calculer les valeurs des empreintes pour chaque examen
+            await Promise.all(exams.map(async exam => {
+                const examId = exam._id;
+
+                // Récupérer les valeurs des empreintes pour cet examen
+                const imprintValues = await Promise.all(imprints.map(async imprint => {
+                    const value = await this.calulateImprintValue(imprint._id, examId);
+                    return { imprint: imprint.name, value };
+                }));
+
+                // Stocker les valeurs des empreintes pour cet examen
+                imprintValues.forEach(({ imprint, value }) => {
+                    if (!imprintValuesMap[imprint]) {
+                        imprintValuesMap[imprint] = [];
+                    }
+                    imprintValuesMap[imprint].push(value);
+                });
+            }));
+
+            const imprintStatistics = Object.entries(imprintValuesMap).map(([imprint, values]) => {
+                const validValues = values.map(value => isNaN(value) ? 0 : value);
+                const minValue = Math.min(...validValues);
+                const maxValue = Math.max(...validValues);
+                const averageValue = validValues.reduce((sum, val) => sum + val, 0) / validValues.length;
+
+                return {
+                    imprint,
+                    minValue,
+                    maxValue,
+                    averageValue
+                };
+            });
+
+            return imprintStatistics;
+        } catch (error) {
+            console.error('Erreur lors du calcul des statistiques des empreintes pour tous les examens:', error);
+            throw error;
+        }
+    }
+
+    async getValueToEachImprint(examId){
+        try {
+            const imprints = await Imprint.find();
+            let response = [];
+
+            await Promise.all(imprints.map(async (imprint) => {
+                const value = await this.calulateImprintValue(imprint.id, examId);
+                response.push(value);
+            }));
+            return response;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getAvailableExam(examId){
+        try {
+            const imprints = await Imprint.find();
+            let response = [];
+
+            await Promise.all(imprints.map(async (imprint) => {
+                const {isAvailable} = await this.buildVariableTreeForImprint(imprint.id, examId);
+                response.push(isAvailable);
+            }));
+            return response.every(value => value);
+        } catch (error) {
+            throw error;
+        }
+    }
 }
+
+
 
 const imprintRepository = new ImprintRepository();
 module.exports = imprintRepository;

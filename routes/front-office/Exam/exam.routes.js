@@ -28,10 +28,22 @@ router.post('/create', validateSchema(examCreateSchema), async (req, res) => {
        throw error;
     }
 })
+
 //get all person exams
 router.get('/:personId', async (req, res) => {
     try {
         const response = await examRepository.getExamByPersonId(req.params.personId);
+        res.status(201).send(response);
+    } catch (error) {
+        logger.error("Error when getting person exam", error);
+        res.status(500).json({ message: 'Error when getting person exam' });
+    }
+});
+
+//exam details
+router.get('/details/:examId', async (req, res) => {
+    try {
+        const response = await examRepository.getExamById(req.params.examId);
         res.status(201).send(response);
     } catch (error) {
         logger.error("Error when getting person exam", error);

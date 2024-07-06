@@ -1,42 +1,21 @@
 require('dotenv').config();
 const Answer = require('../models/Answer');
-const Usager = require('../models/Usager');
-const Quiz = require('../models/Exam');
-const calculPointRepository = require('../repositories/CaculPointRepository');
+const Option = require('../models/Option');
+const Exam = require('../models/Exam');
 const {ObjectId} = require("mongodb");
 const Helper = require('../common/Helper');
 
 
 class AnswerRepository {
 
-    async create(usager, propositions, quizId) {
+    async create(answers) {
         try {
-            const quiz = await Quiz.findById(quizId);
-            if (!quiz) {
-                throw new Error('Quiz doesn\'t exist !');
+            const exam = await Exam.findById(answers[0].examId);
+            if (!exam) {
+                throw new Error('Exam doesn\'t exist !');
             }
-            let resultUsager = await Usager.findOne({email: usager.email});
-            if (!resultUsager) {
-                resultUsager =  await Usager.create(usager);
-            }
-            let datas = [];
-            propositions.forEach((value) => {
-                datas.push({
-                    propositionId: new ObjectId(value.id),
-                    usagerId: resultUsager._id,
-                    quizId: new ObjectId(quizId),
-                    value: value.value
-                })
-            })
-            console.log(datas)
 
-
-            const promises = datas.map(async (value) => {
-                console.log("Creating Answer with value:", value);
-                return await Answer.create(value);
-            });
-            const answers = await Promise.all(promises);
-            let quizzInfos = await Quiz.findById(quizId);
+            /*let quizzInfos = await Quiz.findById(quizId);
             let points = await calculPointRepository.calculImprintUser(resultUsager._id, quiz.companyId, '660ef07d12bd44b5e6ae8085',quizId);
             Helper.generateQrCode({
                 date: this.formatDate(new Date()),
@@ -59,8 +38,8 @@ class AnswerRepository {
                 mmlogo: process.env.HOSTNAME+'/logos/mm_logo.jpg',
                 signature1: process.env.HOSTNAME+'/logos/signaturebossou.PNG',
                 signature2: process.env.HOSTNAME+'/logos/signaturemondo.PNG',
-            }, quizId, resultUsager._id)
-            return points;
+            }, quizId, resultUsager._id)*/
+            return await Answer.insertMany(answers);
         } catch (error) {
             console.error(error)
             throw error;
