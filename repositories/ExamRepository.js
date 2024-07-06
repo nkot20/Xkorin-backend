@@ -1,12 +1,29 @@
 require('dotenv').config();
 const Examen = require('../models/Exam');
 const Person = require('../models/Person');
+const Company = require('../models/Company')
+const Institution = require('../models/Institution');
 const SubcategoryImprint = require('../models/SubCategoryImprint');
+const imprintRepository = require('../repositories/ImprintRepository');
+const {response} = require("express");
 class ExamRepository {
     async create(payload) {
         try {
             return await Examen.create(payload);
         } catch (error) {
+            throw error;
+        }
+    }
+
+    async getExamById(id) {
+        try {
+            const exam = await Examen.findById(id);
+            const person = await Person.findById(exam.personId);
+            const institution = await Institution.findById(exam.institutionId);
+            const company = await Company.findById(person.company_id[0]);
+            return {exam, person, company, institution}
+        } catch (error) {
+            console.error(error)
             throw error;
         }
     }
@@ -19,7 +36,12 @@ class ExamRepository {
             const imprints = await SubcategoryImprint.findOne({subcategoryId: person.subcategory_id});
             const indiceAvailable = !(imprints.length < 5)
             const exams = await Examen.find({personId}).sort({ createdAt: -1 }).populate('institutionId').exec();
-            return {exams, indiceAvailable};
+            let response = [];
+            await Promise.all(exams.map(async (exam) =>  {
+                const indiceAvailable = await imprintRepository.getAvailableExam(exam._id);
+                response.push({exam, indiceAvailable})
+            }))
+            return response;
         } catch (error) {
             console.error(error)
             throw error;

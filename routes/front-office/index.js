@@ -7,6 +7,7 @@ const imprintRouter = require('./Imprint');
 const institutionRouter = require('./Institution');
 const examRouter = require('./Exam');
 const optionRouter = require('./Option');
+const answerRouter = require('./Answer')
 
 
 router.use('/category', categoryRouter);
@@ -16,5 +17,6 @@ router.use('/imprint', imprintRouter);
 router.use('/institution', institutionRouter);
 router.use('/exam', examRouter);
 router.use('/option', optionRouter);
+router.use('/answer', answerRouter);
 
 module.exports = router
