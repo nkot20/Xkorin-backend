@@ -30,10 +30,6 @@ const PersonSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
-  country_code: {
-    type: String,
-    required: false,
-  },
   created_date: {
     type: Date,
     default: Date.now(),
