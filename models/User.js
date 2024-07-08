@@ -48,14 +48,6 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
-  created_date: {
-    type: Date,
-    default: Date.now(),
-  },
-  updated_date: {
-    type: Date,
-    default: Date.now(),
-  },
   avatar: {
     type: String,
     default: '',
@@ -79,10 +71,6 @@ const UserSchema = new mongoose.Schema({
   validationExpirationToken: {
     type: Date
   },
-  function: {
-    type: String
-  }
-
 
 }, { timestamps: true });
 

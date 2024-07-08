@@ -32,14 +32,21 @@ const companySchema = Schema({
       type: String,
       default: '',
     },
-
+    signature: {
+      type: String,
+      default: '',
+    }
   },
   agreements: {
     type: Boolean,
   },
   description: {
     type: String,
-  }
+  },
+  country: {
+    type: String,
+    required: false,
+  },
 
 }, { timestamps: true });
 
