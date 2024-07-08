@@ -60,6 +60,7 @@
     "passport-local": "^1.0.0",
     "path": "^0.12.7",
     "pdf-creator-node": "^2.3.5",
+    "pdf-lib": "^1.17.1",
     "puppeteer": "^22.6.4",
     "qrcode": "^1.5.3",
     "random": "^3.0.6",

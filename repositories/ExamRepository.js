@@ -33,8 +33,6 @@ class ExamRepository {
             const person = await Person.findById(personId);
             if (!person)
                 throw new Error("This person doesn't exist");
-            const imprints = await SubcategoryImprint.findOne({subcategoryId: person.subcategory_id});
-            const indiceAvailable = !(imprints.length < 5)
             const exams = await Examen.find({personId}).sort({ createdAt: -1 }).populate('institutionId').exec();
             let response = [];
             await Promise.all(exams.map(async (exam) =>  {

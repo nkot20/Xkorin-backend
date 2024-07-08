@@ -10,6 +10,7 @@ const template = fs.readFileSync("./templates/Certificat/page.html", "utf8");
 const QRCode = require('qrcode');
 const mustache = require('mustache')
 const puppeteer = require('puppeteer');
+const { PDFDocument } = require('pdf-lib');
 
 module.exports = class Helper {
   static async apiSuccessResponse(data, message = '') {
@@ -165,8 +166,8 @@ module.exports = class Helper {
     }
   }
 
-  static generateQrCode(datas, idUsager, idQuiz) {
-    QRCode.toFile('./public/qrcode/'+idQuiz+'_'+idUsager+'.png', JSON.stringify(datas), {
+  static generateQrCode(datas, personId, examId, imprint) {
+    QRCode.toFile('./public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png', JSON.stringify(datas), {
       errorCorrectionLevel: 'H',
       width: 150,
       height: 150
@@ -176,7 +177,7 @@ module.exports = class Helper {
     });
   }
 
-  static async exportWebsiteAsPdf(data, idQuiz, idUsager) {
+  static async exportWebsiteAsPdf(data, examId, imprint) {
     try {
       const html = mustache.render(template, data);
       // Create a browser instance
@@ -193,10 +194,17 @@ module.exports = class Helper {
 
       // To reflect CSS used for screens instead of print
       await page.emulateMediaType('screen');
+      const directoryPath = "./public/certificats/imprints/"+examId;
 
+      if (!fs.existsSync(directoryPath)){
+        fs.mkdirSync(directoryPath, { recursive: true });
+      } else {
+        console.log("folder already exist")
+      }
+      //this.createDirectoryIfNotExistsSync(directoryPath);
       // Download the PDF
       const PDF = await page.pdf({
-        path: "./public/certificats/formation/"+idQuiz+"_"+idUsager+".pdf",
+        path: "./public/certificats/imprints/"+examId+ "/" +imprint+ ".pdf",
         margin: { top: '5px', right: '10px', bottom: '5px', left: '10px' },
         printBackground: true,
         format: 'A4',
@@ -228,5 +236,67 @@ module.exports = class Helper {
       });
     });
   }
+
+  /**
+   * Fonction pour combiner des PDF en un seul fichier
+   * @param {string} pdfDir - Chemin du répertoire contenant les fichiers PDF à combiner
+   * @param {string} outputFilePath - Chemin du fichier PDF combiné à générer
+   */
+  static async combinePdfs(pdfDir, outputFilePath) {
+    try {
+      if (fs.existsSync(outputFilePath)){
+        console.log("file already combined");
+        return ;
+      }
+      // Lire tous les fichiers du répertoire
+      const files = await fs.promises.readdir(pdfDir);
+
+      // Filtrer pour obtenir uniquement les fichiers PDF
+      const pdfPaths = files.filter(file => path.extname(file).toLowerCase() === '.pdf')
+          .map(file => path.join(pdfDir, file));
+
+      if (pdfPaths.length === 0) {
+        throw new Error('Aucun fichier PDF trouvé dans le répertoire spécifié.');
+      }
+
+      // Créer un nouveau document PDF combiné
+      const combinedPdf = await PDFDocument.create();
+
+      for (const pdfPath of pdfPaths) {
+        // Lire chaque fichier PDF
+        const existingPdfBytes = fs.readFileSync(pdfPath);
+        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        const copiedPages = await combinedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+        copiedPages.forEach((page) => combinedPdf.addPage(page));
+      }
+
+      // Enregistrer le document PDF combiné
+      const combinedPdfBytes = await combinedPdf.save();
+      fs.writeFileSync(outputFilePath, combinedPdfBytes);
+
+      console.log('PDF combiné avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de la combinaison des PDF :', error);
+    }
+  }
+
+  /**
+   * Fonction pour créer un dossier si nécessaire (version synchrone)
+   * @param {string} dirPath - Chemin du dossier à créer
+   */
+   static createDirectoryIfNotExistsSync =(dirPath) => {
+    try {
+      console.log(`Vérification de l'existence du répertoire : ${dirPath}`);
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, {recursive: true});
+        console.log(`Répertoire créé avec succès : ${dirPath}`);
+      } else {
+        console.log(`Le répertoire existe déjà : ${dirPath}`);
+      }
+    } catch (error) {
+      console.error(`Erreur lors de la création du répertoire : ${error.message}`);
+    }
+  }
+
 
 };

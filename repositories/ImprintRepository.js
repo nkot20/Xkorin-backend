@@ -11,8 +11,11 @@ const VariableTranslation = require("../models/VariableTranslation");
 const PropositionTranslation = require("../models/PropositionTranslation");
 const Answer = require("../models/Answer");
 const Exam = require("../models/Exam");
+const Person = require("../models/Person");
 const subcategoryImprintRepository = require("../repositories/SubCategoryImprintRepository");
 const {ObjectId} = require("mongodb");
+const Helper = require("../common/Helper");
+const fs = require("fs");
 
 
 
@@ -366,6 +369,7 @@ class ImprintRepository {
 
     async calulateImprintValue(imprintId, examId) {
         try {
+
             // Étape 1 : Récupérer toutes les variables associées à l'empreinte
             const variables = await Variable.find({ imprintId }).lean();
             const variableMap = {};
@@ -419,7 +423,7 @@ class ImprintRepository {
             const totalWeight = leafVariables.reduce((sum, variable) => sum + variable.weight, 0);
 
             // Retourner l'arbre des variables
-             return Math.ceil((leafVariables.reduce((sum, variable) => sum + (variable.weight / totalWeight) * variable.value, 0)/7)*1216);
+             return Math.ceil((leafVariables.reduce((sum, variable) => sum + (variable.weight / totalWeight) * variable.value, 0) / 7) * 1216);
         } catch (error) {
             console.log(error);
             throw error;
@@ -504,11 +508,44 @@ class ImprintRepository {
             let response = [];
 
             await Promise.all(imprints.map(async (imprint) => {
-                const value = await this.calulateImprintValue(imprint.id, examId);
-                response.push(value);
-            }));
-            return response;
+                const exam = await Exam.findById(examId);
+                const person = await Person.findById(exam.personId);
+                await this.calulateImprintValue(imprint.id, examId).then(value => {
+                     console.log("imprint value " + imprint.name + ' ', value);
+                     Helper.generateQrCode({
+                        date: this.formatDate(new Date()),
+                        nom: person.name,
+                        formation: imprint.name + ' imprint',
+                        score: value + '/1216'
+                     }, person._id, examId, imprint.name);
+                     Helper.exportWebsiteAsPdf({
+                        date: this.formatDate(new Date()),
+                        dateExpiration: this.formatDate(this.addYearsToDate(new Date(),1)),
+                        lastname: person.name,
+                        firstname: '',
+                        formation: imprint.name + ' imprint',
+                        points: value,
+                        qrcode: this.imageFileToBase64('./public/qrcode/'+ imprint.name + '_' +examId+'_'+person._id+'.png'),
+                        logoentetegauche: this.imageFileToBase64('./public/logos/accelerate-africa.jpg'),
+                        logoentetedroit: this.imageFileToBase64('./public/logos/wellbin.PNG'),
+                        diamantlogo: this.imageFileToBase64('./public/logos/diamant_logo.jpg'),
+                        humanbetlogo: this.imageFileToBase64('./public/logos/humanbet_logo.jpg'),
+                        mmlogo: this.imageFileToBase64('./public/logos/mm_logo.jpg'),
+                        signature1: this.imageFileToBase64('./public/logos/signaturebossou.PNG'),
+                        signature2: this.imageFileToBase64('./public/logos/signaturemondo.PNG'),
+                    }, examId, imprint.name).then(value => {
+
+                    })
+
+                    response.push(value);
+                });
+
+            })).then(async value => {
+                await Helper.combinePdfs("./public/certificats/imprints/"+examId, "./public/certificats/imprints-fusion/"+examId+".pdf")
+            });
+             return response;
         } catch (error) {
+            console.log(error)
             throw error;
         }
     }
@@ -525,6 +562,32 @@ class ImprintRepository {
             return response.every(value => value);
         } catch (error) {
             throw error;
+        }
+    }
+
+    formatDate(date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    addYearsToDate(date, yearsToAdd) {
+        const newDate = new Date(date); // Crée une copie de la date d'origine
+        newDate.setFullYear(newDate.getFullYear() + yearsToAdd); // Ajoute le nombre d'années spécifié
+        return newDate;
+    }
+
+    imageFileToBase64(filePath) {
+        try {
+            // Lire le fichier image depuis le chemin relatif
+            const imageData = fs.readFileSync(filePath);
+
+            // Convertir les données en base64
+            return Buffer.from(imageData).toString('base64');
+        } catch (error) {
+            console.error('Erreur lors de la conversion de l\'image en base64 :', error.message);
+            return null;
         }
     }
 }
