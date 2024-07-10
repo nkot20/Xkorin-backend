@@ -167,6 +167,13 @@ module.exports = class Helper {
   }
 
   static generateQrCode(datas, personId, examId, imprint) {
+    const directoryPath = './public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png';
+
+    if (!fs.existsSync(directoryPath)){
+      fs.mkdirSync(directoryPath, { recursive: true });
+    } else {
+      return;
+    }
     QRCode.toFile('./public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png', JSON.stringify(datas), {
       errorCorrectionLevel: 'H',
       width: 150,
@@ -179,6 +186,13 @@ module.exports = class Helper {
 
   static async exportWebsiteAsPdf(data, examId, imprint) {
     try {
+      const directoryPath = "./public/certificats/imprints/"+examId;
+
+      if (!fs.existsSync(directoryPath)){
+        fs.mkdirSync(directoryPath, { recursive: true });
+      } else {
+        return;
+      }
       const html = mustache.render(template, data);
       // Create a browser instance
       const browser = await puppeteer.launch({
@@ -194,13 +208,7 @@ module.exports = class Helper {
 
       // To reflect CSS used for screens instead of print
       await page.emulateMediaType('screen');
-      const directoryPath = "./public/certificats/imprints/"+examId;
 
-      if (!fs.existsSync(directoryPath)){
-        fs.mkdirSync(directoryPath, { recursive: true });
-      } else {
-        console.log("folder already exist")
-      }
       //this.createDirectoryIfNotExistsSync(directoryPath);
       // Download the PDF
       const PDF = await page.pdf({
