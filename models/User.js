@@ -65,13 +65,16 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  alreadyLogin: {
+    type: Boolean,
+    default: false
+  },
   validationToken: {
     type: String
   },
   validationExpirationToken: {
     type: Date
   },
-
 }, { timestamps: true });
 
 // Hash the password before saving

@@ -45,11 +45,13 @@ router.get("/dashboard/:examId", async (req, res) => {
 router.get("/cii/:examId", async (req, res) => {
     try {
         const response = await imprintRepository.getConfidenceIndex(req.params.examId);
+        console.log(response)
         return res.status(200).send({score: response});
     } catch (error) {
+        console.log(error)
         logger.error('Error when getting index', { error: error });
         return res.status(400).json({
-            error: error.message,
+            error: error,
         });
     }
 });
@@ -74,6 +76,24 @@ router.get("/imprints-values/:examId", async (req, res) => {
         return res.status(200).send(response);
     } catch (error) {
         logger.error('Error when getting imprints value', { error: error });
+        return res.status(400).json({
+            error: error.message,
+        });
+    }
+});
+
+
+/*
+    get inclusive confidence index to all exam concerning institution
+    for each exam return date, index and each imprint
+ */
+router.get("/:institutionId/evolution/:personId", async (req, res) => {
+    try {
+        const response = await imprintRepository.getDatasForEachExam(req.params.institutionId, req.params.personId);
+        return res.status(200).send(response);
+    } catch (error) {
+        console.log(error)
+        logger.error('Error when getting imprints evolution', { error: error });
         return res.status(400).json({
             error: error.message,
         });

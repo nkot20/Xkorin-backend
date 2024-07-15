@@ -193,6 +193,14 @@ class CompanyRepository {
             as: 'admin',
           },
         },
+        {
+          $lookup: {
+            from: 'persons',
+            localField: 'promoterId',
+            foreignField: '_id',
+            as: 'promoter',
+          },
+        },
       ]);
 
       // Options pour la pagination et le tri

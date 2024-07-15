@@ -16,7 +16,10 @@ const subcategoryImprintRepository = require("../repositories/SubCategoryImprint
 const {ObjectId} = require("mongodb");
 const Helper = require("../common/Helper");
 const fs = require("fs");
-
+const { setCache, getCache, clearCache } = require('../common/cache');
+const Examen = require("../models/Exam");
+const Institution = require("../models/Institution");
+const Company = require("../models/Company");
 
 
 
@@ -367,79 +370,112 @@ class ImprintRepository {
         }
     }
 
-    async calulateImprintValue(imprintId, examId) {
-        try {
+     async calulateImprintValue(imprintId, examId) {
+        //await clearCache();
+        return new Promise(async (resolve, reject) => {
+            const cacheKey = `${examId}_${imprintId}`;
 
-            // Étape 1 : Récupérer toutes les variables associées à l'empreinte
-            const variables = await Variable.find({ imprintId }).lean();
-            const variableMap = {};
-            variables.forEach(variable => {
-                variableMap[variable._id] = {
-                    ...variable,
-                    children: [],
-                    weight: variable.dafaultWeight || 0,
-                    value: 0
-                };
-            });
+            // Vérifier le cache
+            const cachedData = await getCache(cacheKey);
+            if (cachedData) {
+                return resolve(cachedData);
+            } else {
+                // Si les données ne sont pas dans le cache, les calculer
+                // Étape 1 : Récupérer toutes les variables associées à l'empreinte
+                const variables = await Variable.find({ imprintId }).lean();
+                const variableMap = {};
+                variables.forEach(variable => {
+                    variableMap[variable._id] = {
+                        ...variable,
+                        children: [],
+                        weight: variable.dafaultWeight || 0,
+                        value: 0
+                    };
+                });
 
 
-            // Étape 3 : récupérer les poids des variables feuilles
-            const leafVariables = variables.filter(variable => variable.children.length === 0);
-
-            await Promise.all(leafVariables.map(async variable => {
-                const questions = await Question.find({ variableId: variable._id, weighting: true }).lean();
-                const weights = await Promise.all(questions.map(async question => {
-                    if (question.weighting) {
+                // Étape 3 : récupérer les poids des variables feuilles
+                const leafVariables = variables.filter(variable => variable.children.length === 0);
+                await Promise.all(leafVariables.map(async variable => {
+                    const questions = await Question.find({ variableId: variable._id}).lean();
+                    await Promise.all(questions.map(async question => {
                         const answer = await Answer.findOne({ questionId: question._id, examId }).lean();
                         if (answer) {
                             const option = await Option.findById(answer.optionId).lean();
-                            return option.value;
-                        } else {
-                            return 0;
+
+                            if (question.weighting) {
+                                variable.weight = option.value;
+                            } else {
+                                variable.value = option.value;
+                            }
                         }
-                    }
+                    }));
                 }));
-                variable.weight = weights[0];
-            }));
 
 
-            // Étape 5 : Récupérer les valeurs des variables feuilles
-            await Promise.all(leafVariables.map(async variable => {
-                const questions = await Question.find({ variableId: variable._id, weighting: false }).lean();
-                const values = await Promise.all(questions.map(async question => {
-                    if (!question.weighting) {
-                        const answer = await Answer.findOne({ questionId: question._id, examId }).lean();
-                        if (answer) {
-                            const option = await Option.findById(answer.optionId).lean();
-                            return option.value;
-                        } else {
-                            return 0;
-                        }
-                    }
-                }));
-                variable.value = values[0];
-            }));
+                /* // Étape 5 : Récupérer les valeurs des variables feuilles
+                 await Promise.all(leafVariables.map(async variable => {
+                     const questions = await Question.find({ variableId: variable._id, weighting: false }).lean();
+                     const values = await Promise.all(questions.map(async question => {
+                         if (!question.weighting) {
+                             const answer = await Answer.findOne({ questionId: question._id, examId }).lean();
+                             if (answer) {
+                                 const option = await Option.findById(answer.optionId).lean();
+                                 return option.value;
+                             } else {
+                                 return 0;
+                             }
+                         }
+                     }));
+                     variable.value = values[0];
+                 }));
 
-            const totalWeight = leafVariables.reduce((sum, variable) => sum + variable.weight, 0);
 
-            // Retourner l'arbre des variables
-             return Math.ceil((leafVariables.reduce((sum, variable) => sum + (variable.weight / totalWeight) * variable.value, 0) / 7) * 1216);
-        } catch (error) {
-            console.log(error);
-            throw error;
-        }
+*/
+
+                const totalWeight = leafVariables.reduce((sum, variable) => sum + variable.weight, 0);
+
+                // Retourner l'arbre des variables
+                let score = Math.ceil((leafVariables.reduce((sum, variable) => sum + (variable.weight / totalWeight) * variable.value, 0) / 7) * 1216);
+                if (isNaN(score))
+                    score = 0;
+
+                // Stocker les données calculées dans le cache
+                await setCache(cacheKey, score);
+                const cachedData2 = await getCache(cacheKey);
+                console.log("cache datas 2 ------------------------------------------------------------------------------------------- ", cacheKey, cachedData2, score);
+                return resolve(score);
+            }
+        });
+
     }
 
     async getConfidenceIndex(examId){
         try {
-            const imprints = await Imprint.find();
-            let response = [];
+            return new Promise(async (resolve, reject) => {
+                const cacheKey = `${examId}_cci`;
 
-            await Promise.all(imprints.map(async (imprint) => {
-                const value = await this.calulateImprintValue(imprint.id, examId);
-                response.push(value);
-            }));
-            return response.reduce((sum, value) => sum + value, 0);
+                // Vérifier le cache
+                const cachedData = await getCache(cacheKey);
+                if (cachedData) {
+                    return resolve(cachedData);
+                } else {
+                    // Si les données ne sont pas dans le cache, les calculer
+                    const imprints = await Imprint.find();
+                    let response = [];
+
+                    await Promise.all(imprints.map(async (imprint) => {
+                        this.calulateImprintValue(imprint.id, examId).then(value => {
+                            response.push(value);
+                        });
+
+                    }));
+                    const cci = response.reduce((sum, value) => sum + value, 0);
+                    console.log("CCI ------------------------------------------------------------------", cci, examId)
+                    resolve(cci);
+                }
+            });
+
         } catch (error) {
             throw error;
         }
@@ -458,7 +494,6 @@ class ImprintRepository {
                 else
                     return 1;
             });
-            console.log(imprints)
             // Dictionnaire pour stocker les valeurs des empreintes pour chaque examen
             const imprintValuesMap = {};
 
@@ -504,7 +539,13 @@ class ImprintRepository {
 
     async getValueToEachImprint(examId){
         try {
-            const imprints = await Imprint.find();
+            let imprints = await Imprint.find();
+            imprints = imprints.sort((a, b) => {
+                if (a.number > b.number)
+                    return -1;
+                else
+                    return 1;
+            })
             let response = [];
 
             await Promise.all(imprints.map(async (imprint) => {
@@ -533,9 +574,7 @@ class ImprintRepository {
                         mmlogo: this.imageFileToBase64('./public/logos/mm_logo.jpg'),
                         signature1: this.imageFileToBase64('./public/logos/signaturebossou.PNG'),
                         signature2: this.imageFileToBase64('./public/logos/signaturemondo.PNG'),
-                    }, examId, imprint.name).then(value => {
-
-                    })
+                    }, examId, imprint.name)
 
                     response.push(value);
                 });
@@ -561,6 +600,60 @@ class ImprintRepository {
             }));
             return response.every(value => value);
         } catch (error) {
+            throw error;
+        }
+    }
+
+    /*
+        Get index and imprints for all exam that we will allow to have graphic evolution
+        @param institutionId,
+        @param personId
+     */
+    async getDatasForEachExam(institutionId, personId) {
+        try {
+            const exams = await Exam.find({personId, institutionId});
+            const evolution = [];
+            const indexValues = [];
+            let imprintsData = [];
+            await Promise.all(exams.map(async (value) => {
+                let imprints = await this.getValueToEachImprint(value._id);
+                const cii = imprints.reduce((sum, value) => sum + value, 0);
+                indexValues.push({date: this.formatDate(value.createdAt), value: cii})
+                evolution.push({imprints, date: this.formatDate(value.createdAt)})
+            }));
+            let i = 0;
+            evolution.forEach(item => {
+                item.imprints.forEach((imprint, index) => {
+                    if (!imprintsData[index]) {
+                        imprintsData[index] = [];
+                    }
+                    imprintsData[index].push({date: item.date, value: imprint});
+                });
+
+
+            })
+
+            const latestExam = await Exam.findOne({ personId, institutionId })
+                .sort({ createdAt: -1 });
+            console.log(latestExam)
+            const examDetails = await this.getExamById(latestExam._id);
+            const imprintValue = await this.getValueToEachImprint(latestExam._id);
+            const variableTree = await this.buildVariableTree(latestExam._id);
+            return {examDetails, evolution: {indexValues, imprintsData}, imprintValue, variableTree};
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getExamById(id) {
+        try {
+            const exam = await Examen.findById(id);
+            const person = await Person.findById(exam.personId);
+            const institution = await Institution.findById(exam.institutionId);
+            const company = await Company.findById(person.company_id[0]);
+            return {exam, person, company, institution}
+        } catch (error) {
+            console.error(error)
             throw error;
         }
     }

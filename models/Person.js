@@ -45,8 +45,10 @@ const PersonSchema = new mongoose.Schema({
   level_of_education: {
     type: String,
     enum: ['Self-taugh', '1st School Living Certificate ', 'GCE O Level/ CAP', 'GCE A Level', '1st year Undergraduate', '2nd year undergraduate', '3rd year undergraduate', 'Postgraduate +1year', 'Masters', 'PhD', 'Other']
+  },
+  role: {
+    type: String,
   }
-
 
 }, { timestamps: true });
 

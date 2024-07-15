@@ -8,6 +8,7 @@ const User = require('../models/User');
 const logger = require('../logger');
 const ROLE = require('../config/role');
 const companyRepository = require('../repositories/CompanyRepository');
+const institutionRepository = require('../repositories/InstitutionRepository');
 const authService = require('../services/AuthService');
 const personRepository = require('../repositories/PersonRepository');
 
@@ -29,7 +30,8 @@ const registerSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
   company: Joi.string().required(),
-  profil: Joi.string().required(),
+  profil: Joi.string(),
+  type: Joi.string().required(),
   subcategory: Joi.string().required(),
   agreements: Joi.boolean().required(),
 });
@@ -103,11 +105,20 @@ router.post('/sign-in', validateSchema(loginSchema), async (req, res, next) => {
           return res.json({
             message: 'Authentication successful', accessToken, refreshToken, user: newUser
           });
-        } else {
+        }
+        if (hasRole(user.role, ROLE.INSTITUTION_ADMIN) || hasRole(user.role, ROLE.INSTITUTION_EMPLOYEE)) {
+          const institution = await institutionRepository.getByAdminId(user._id);
+          let newUser = user._doc
+          newUser = Object.assign({}, newUser, {
+            institution
+          });
           return res.json({
-            message: 'Authentication successful', accessToken, refreshToken, user,
+            message: 'Authentication successful', accessToken, refreshToken, user: newUser
           });
         }
+        return res.json({
+          message: 'Authentication successful', accessToken, refreshToken, user,
+        });
       });
     });
   } catch (err) {
@@ -142,8 +153,9 @@ router.post('/sign-up', validateSchema(registerSchema), async (req, res) => {
     logger.info(`Registration successful for user ${person.email}`, { user_email: person.email,  });
     return res.json({ message: 'Registration successful' });
   } catch (err) {
-    logger.error('Internal server error', { error: err });
-    return res.status(400).json({ message: 'Registration failed', error: err });
+    const errorMessage = err.message || 'Internal server error'
+    logger.error(errorMessage, { error: err });
+    return res.status(400).json({ message: errorMessage, error: err });
   }
 });
 
@@ -158,18 +170,34 @@ router.get('/meTest', authMiddleware.authenticate, (req, res) => {
 
 router.post('/sign-in-with-token', passport.authenticate('jwt', { session: false }), async (req, res) => {
   const accessToken = generateAccessToken(req.user);
-
+  const user = req.user;
+  console.log(user)
   logger.info('Authentication with token successful', { timestamp });
-  if (hasRole(req.user.role, ROLE.COMPANY_ADMIN)) {
-    const person = await personRepository.findPersonByEmail(req.user.email);
-    const company = await companyRepository.getCompany(person.company_id[0])
-    let user = req.user;
-    user.company = company;
-    user.person = person;
-    return res.json({ message: 'Authentication successful', accessToken, user});
-  } else {
-    return res.json({ message: 'Authentication with token successful', accessToken, user: req.user });
+  if (hasRole(user.role, ROLE.COMPANY_ADMIN)) {
+    const person = await personRepository.findPersonByEmail(user.email)
+    const company = await companyRepository.getCompany(person.company_id[0]);
+    let newUser = user;
+    newUser = Object.assign({}, newUser, {
+      company: company,
+      person: person
+    });
+    return res.json({
+      message: 'Authentication successful', accessToken, refreshToken, user: newUser
+    });
   }
+  if (hasRole(user.role, ROLE.INSTITUTION_ADMIN) || hasRole(user.role, ROLE.INSTITUTION_EMPLOYEE)) {
+    const institution = await institutionRepository.getByAdminId(user._id);
+    let newUser = user;
+    newUser = Object.assign({}, newUser, {
+      institution
+    });
+    return res.json({
+      message: 'Authentication successful', accessToken, user: newUser
+    });
+  }
+  return res.json({
+    message: 'Authentication successful', accessToken, user,
+  });
 
 });
 
