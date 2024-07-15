@@ -5,7 +5,8 @@ const { Schema } = mongoose;
 const aggregatePaginate = require('mongoose-aggregate-paginate-v2');
 
 const companySchema = Schema({
-  promoterId: [{ type: Schema.Types.ObjectId, ref: 'users' }],
+  adminId: { type: Schema.Types.ObjectId, ref: 'users' },
+  promoterId: [{ type: Schema.Types.ObjectId, ref: 'persons' }],
   name: {
     type: String,
     required: true,

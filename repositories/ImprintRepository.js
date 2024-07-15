@@ -613,12 +613,12 @@ class ImprintRepository {
         try {
             const exams = await Exam.find({personId, institutionId});
             const evolution = [];
-            const index = [];
+            const indexValues = [];
             let imprintsData = [];
             await Promise.all(exams.map(async (value) => {
                 let imprints = await this.getValueToEachImprint(value._id);
                 const cii = imprints.reduce((sum, value) => sum + value, 0);
-                index.push({date: this.formatDate(value.createdAt), value: cii})
+                indexValues.push({date: this.formatDate(value.createdAt), value: cii})
                 evolution.push({imprints, date: this.formatDate(value.createdAt)})
             }));
             let i = 0;
@@ -639,7 +639,7 @@ class ImprintRepository {
             const examDetails = await this.getExamById(latestExam._id);
             const imprintValue = await this.getValueToEachImprint(latestExam._id);
             const variableTree = await this.buildVariableTree(latestExam._id);
-            return {examDetails, evolution: {index, imprintsData}, imprintValue, variableTree};
+            return {examDetails, evolution: {indexValues, imprintsData}, imprintValue, variableTree};
         } catch (error) {
             throw error;
         }

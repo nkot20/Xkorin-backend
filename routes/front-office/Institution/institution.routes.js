@@ -14,6 +14,20 @@ router.get('/', async (req, res) => {
             error: error.message,
         });
     }
-})
+});
 
+/**
+ * update institution after first login
+ */
+router.patch('/update-first-login/:institutionId/user/:userId',async (req, res) => {
+    try {
+        const response = await institutionRepository.updateAfterFirstInscription(req.params.userId, req.params.institutionId, req.body);
+        return res.status(200).send(response);
+    } catch (error) {
+        logger.error('Error when updating institution', { error: error });
+        return res.status(400).json({
+            error: error.message,
+        });
+    }
+});
 module.exports = router;
