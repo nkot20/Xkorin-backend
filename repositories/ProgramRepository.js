@@ -49,7 +49,21 @@ class ProgramRepository {
         }
     }
 
+    async listAllInstitutionProgram(institutionId) {
+        try {
+            return await Program.find({institutionId});
+        } catch (error) {
+            throw error;
+        }
+    }
 
+    async archivedProgram(id) {
+        try {
+            return await Program.updateOne({_id: id}, {archived: true});
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 const programRepository = new ProgramRepository();

@@ -7,6 +7,10 @@ const programSchema = Schema({
         type: String,
         required: true,
     },
+    archived: {
+       type: Boolean,
+       default: false,
+    },
     targetInstitutionId: { type: Schema.Types.ObjectId, ref: 'institutions' },
 }, { timestamps: true });
 
