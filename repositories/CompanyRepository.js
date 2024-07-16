@@ -203,11 +203,6 @@ class CompanyRepository {
         },
       ]);
 
-      // Options pour la pagination et le tri
-      const aggregateOptions = {
-        ...options,
-        customLabels: { docs: 'companies', totalDocs: 'totalCompanies' },
-      };
 
       // Ajouter une recherche par nom de l'entreprise ou nom de l'administrateur
       const searchRegex = new RegExp(options.search, 'i');

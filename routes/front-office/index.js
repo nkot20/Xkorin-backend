@@ -10,6 +10,7 @@ const optionRouter = require('./Option');
 const answerRouter = require('./Answer');
 const userRouter = require('./User');
 const companyRouter = require('./Company');
+const programRouter = require('./Program');
 
 
 router.use('/category', categoryRouter);
@@ -22,5 +23,6 @@ router.use('/option', optionRouter);
 router.use('/answer', answerRouter);
 router.use('/user', userRouter);
 router.use('/company', companyRouter);
+router.use('/program', programRouter);
 
 module.exports = router
