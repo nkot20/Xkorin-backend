@@ -11,7 +11,8 @@ const answerRouter = require('./Answer');
 const userRouter = require('./User');
 const companyRouter = require('./Company');
 const programRouter = require('./Program');
-
+const variableRouter = require('./Variable');
+const weightRouter = require('./Weight');
 
 router.use('/category', categoryRouter);
 router.use('/sub-category', subCategoryRouter);
@@ -24,5 +25,7 @@ router.use('/answer', answerRouter);
 router.use('/user', userRouter);
 router.use('/company', companyRouter);
 router.use('/program', programRouter);
+router.use('/variable', variableRouter);
+router.use('/weight', weightRouter);
 
 module.exports = router

@@ -1,11 +1,9 @@
 const mongoose = require('mongoose');
 
 const weightSchema = new mongoose.Schema({
-    value: { /// to know if question is a exam question with points or it's just to get information (factor weight or information)
-        type: Number,
-    },
-    factorId: { type: mongoose.Schema.Types.ObjectId, ref: 'factors' },
-    organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'organisationId' }
+    optionId: {type: mongoose.Schema.Types.ObjectId, ref: 'options'},
+    institutionId: { type: mongoose.Schema.Types.ObjectId, ref: 'institutions' },
+    variableId: { type: mongoose.Schema.Types.ObjectId, ref: 'variables' }
 }, { timestamps: true });
 
 const weight = mongoose.model('weight', weightSchema);

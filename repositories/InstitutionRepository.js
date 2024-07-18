@@ -1,9 +1,10 @@
-const Institution = require('../models/Institution');
-const programRepository = require('../repositories/ProgramRepository');
+
 require('dotenv').config();
 const mongoose = require('mongoose');
 const {ObjectId} = require("mongodb");
 const userRepository = require('../repositories/UserRepository');
+const Institution = require('../models/Institution');
+const programRepository = require('../repositories/ProgramRepository');
 
 class InstitutionRepository {
 
