@@ -2,7 +2,6 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Imprint = require('../models/Imprint');
 const Variable = require('../models/Variable');
-const Factor = require('../models/Factor');
 const Question = require('../models/Question');
 const Option = require('../models/Option');
 const Language = require("../models/Language");

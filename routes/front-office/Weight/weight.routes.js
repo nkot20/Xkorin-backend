@@ -15,9 +15,8 @@ const weightCreateSchema = Joi.object({
 //get variable group by imprint and get weight by institution
 router.post('/create', validateSchema(weightCreateSchema), async (req, res) => {
     try {
-
-        const variables = await weightRepository.create(req.body);
-        return res.status(200).send(variables)
+        const weight = await weightRepository.create(req.body);
+        return res.status(200).send(weight)
     } catch (error) {
         logger.error('Error when adding new weight by institution', { error: error });
         return res.status(400).json({

@@ -10,6 +10,7 @@ const Option = require("../models/Option");
 const QuestionTranslation = require("../models/QuestionTranslation");
 const VariableTranslation = require("../models/VariableTranslation");
 const mongoose = require('mongoose');
+const imprintInstitutionRepository = require('../repositories/ImprintInstitutionRepository');
 
 class VariableRepository {
     async create(datas, names, problems) {
@@ -444,12 +445,13 @@ class VariableRepository {
             const defaultOptionId = defaultOption._id;
 
             // Retrieve all imprints
-            const imprints = await Imprint.find({});
+            const imprints = await imprintInstitutionRepository.getImprintsByInstitution(institutionId);
 
             // Process each imprint
             const result = await Promise.all(imprints.map(async (imprint) => {
                 // Find variables for the current imprint
-                const variables = await Variable.find({ imprintId: imprint._id });
+                const newImprint = await Imprint.findById(imprint.imprintId);
+                const variables = await Variable.find({ imprintId: imprint.imprintId });
 
                 // Prepare an array to store processed variables
                 const processedVariables = await Promise.all(variables.map(async (variable) => {
@@ -478,9 +480,11 @@ class VariableRepository {
 
                 // Return the processed imprint with variables
                 return {
-                    _id: imprint._id,
+                    _id: imprint.imprintId,
                     name: imprint.name,
-                    number: imprint.number,
+                    status: imprint.status,
+                    isAddedForAnInstitution: imprint.isAddedForAnInstitution,
+                    number: newImprint.number,
                     variables: processedVariables
                 };
             }));
