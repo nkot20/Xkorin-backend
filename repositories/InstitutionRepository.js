@@ -1,9 +1,10 @@
-const Institution = require('../models/Institution');
-const programRepository = require('../repositories/ProgramRepository');
+
 require('dotenv').config();
 const mongoose = require('mongoose');
 const {ObjectId} = require("mongodb");
 const userRepository = require('../repositories/UserRepository');
+const Institution = require('../models/Institution');
+const programRepository = require('../repositories/ProgramRepository');
 
 class InstitutionRepository {
 
@@ -54,6 +55,14 @@ class InstitutionRepository {
     async getByName(name) {
         try {
             return await Institution.findOne({name});
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getByType(type) {
+        try {
+            return await Institution.find({type});
         } catch (error) {
             throw error;
         }

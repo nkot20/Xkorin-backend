@@ -44,6 +44,18 @@ router.patch('/update/:id', validateSchema(programUpdateSchema), async (req, res
     }
 });
 
+router.get('/:institutionId/no-pagination/', async (req, res) => {
+    try {
+        const response = await programRepository.listProgramsByInstitutionWithoutPagination(req.params.institutionId);
+        res.status(201).send(response);
+    } catch (error) {
+        logger.error('Error when getting institution programs', { error: error });
+        return res.status(400).json({
+            error: error.message,
+        });
+    }
+})
+
 // get program by institutionId
 router.get('/:institutionId', async (req, res) => {
     try {

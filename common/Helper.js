@@ -169,9 +169,7 @@ module.exports = class Helper {
   static generateQrCode(datas, personId, examId, imprint) {
     const directoryPath = './public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png';
 
-    if (!fs.existsSync(directoryPath)){
-      fs.mkdirSync(directoryPath, { recursive: true });
-    } else {
+    if (fs.existsSync(directoryPath)){
       return;
     }
     QRCode.toFile('./public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png', JSON.stringify(datas), {
@@ -258,7 +256,6 @@ module.exports = class Helper {
       }
       // Lire tous les fichiers du répertoire
       const files = await fs.promises.readdir(pdfDir);
-
       // Filtrer pour obtenir uniquement les fichiers PDF
       const pdfPaths = files.filter(file => path.extname(file).toLowerCase() === '.pdf')
           .map(file => path.join(pdfDir, file));
