@@ -17,6 +17,21 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * get institution by type
+ */
+router.get('/type/:type', async (req, res) => {
+    try {
+        const response = await institutionRepository.getByType(req.params.type)
+        return res.status(200).send(response);
+    } catch (error) {
+        logger.error('Error when getting institution by type', { error: error });
+        return res.status(400).json({
+            error: error.message,
+        });
+    }
+});
+
+/**
  * update institution after first login
  */
 router.patch('/update-first-login/:institutionId/user/:userId',async (req, res) => {

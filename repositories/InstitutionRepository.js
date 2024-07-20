@@ -60,6 +60,14 @@ class InstitutionRepository {
         }
     }
 
+    async getByType(type) {
+        try {
+            return await Institution.find({type});
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async getById(id) {
         try {
             return await Institution.findById(id);

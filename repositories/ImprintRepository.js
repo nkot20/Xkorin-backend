@@ -11,6 +11,7 @@ const PropositionTranslation = require("../models/PropositionTranslation");
 const Answer = require("../models/Answer");
 const Exam = require("../models/Exam");
 const Person = require("../models/Person");
+const examRepository = require("../repositories/ExamRepository");
 const subcategoryImprintRepository = require("../repositories/SubCategoryImprintRepository");
 const {ObjectId} = require("mongodb");
 const Helper = require("../common/Helper");
@@ -32,7 +33,12 @@ class ImprintRepository {
         }
     }
 
-    // Fonction pour récupérer les derniers fils sans fils pour chaque variable sans père et leurs traductions
+    /**
+     * Fonction pour récupérer les derniers fils sans fils pour chaque variable sans père et leurs traductions
+     * @param orphanVariables
+     * @param languageId
+     * @returns {Promise<Awaited<unknown>[]>}
+     */
     async getLastChildrenForOrphans(orphanVariables, languageId) {
         try {
             // Fonction récursive pour trouver les derniers fils sans fils
@@ -83,6 +89,13 @@ class ImprintRepository {
         }
     }
 
+    /**
+     *
+     * @param subcategoryId
+     * @param isoCode (language)
+     * @param profilId
+     * @returns {Promise<*[]>}
+     */
     async getVariablesForImprints(subcategoryId, isoCode, profilId) {
         try {
             // Trouver les imprintIds d'une sous catégorie
@@ -179,7 +192,12 @@ class ImprintRepository {
         }
     }
 
-
+    /**
+     *
+     * @param footprintId
+     * @param variableId
+     * @returns {Promise<awaited Query<UpdateResult, module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? DocType : unknown extends Document ? Require_id<module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? DocType : unknown> : (Document<unknown, any, module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? DocType : unknown> & MergeType<Require_id<module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? DocType : unknown>, module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? TVirtuals : unknown & module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? TInstanceMethods : unknown>), module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? TQueryHelpers : unknown, module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? DocType : unknown> & module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? TQueryHelpers : unknown>}
+     */
     async addVariableToFootprint(footprintId, variableId) {
 
         try {
@@ -224,21 +242,24 @@ class ImprintRepository {
     }
 
 
-    // Fonction pour obtenir l'arbre de variables pour chaque empreinte
+    /**
+     * Fonction pour obtenir l'arbre de variables pour chaque empreinte
+     * @returns {Promise<Awaited<unknown>[]>}
+     */
     async getFootprintVariableTree() {
         try {
             // Récupérer toutes les empreintes
             const imprints = await Imprint.find({});
 
             // Utiliser Promise.all pour exécuter les requêtes en parallèle
-            const imprintVariableTree = await Promise.all(imprints.map(async (fp) => {
+            return await Promise.all(imprints.map(async (fp) => {
                 // Récupérer la racine de l'arbre de variables pour cette empreinte
-                const rootVariables = await Variable.find({ imprintId: fp._id, parent: null });
+                const rootVariables = await Variable.find({imprintId: fp._id, parent: null});
 
                 // Fonction récursive pour construire l'arbre de variables
                 let heightTree = 0;
                 const buildVariableTree = async (parentId, imprintId) => {
-                    const children = await Variable.find({ imprintId: fp._id, parent: parentId });
+                    const children = await Variable.find({imprintId: fp._id, parent: parentId});
 
                     if (children.length === 0) {
                         return [];
@@ -250,10 +271,10 @@ class ImprintRepository {
                         const subtree = await buildVariableTree(child._id, imprintId);
 
                         if (subtree.length === 0 && child.isFactor) {
-                            tree.push({ text: child.name, value: child._id+'-'+fp._id+'-leaf', children: subtree });
+                            tree.push({text: child.name, value: child._id + '-' + fp._id + '-leaf', children: subtree});
 
                         } else
-                            tree.push({ text: child.name, value: child._id+'-'+fp._id, children: subtree });
+                            tree.push({text: child.name, value: child._id + '-' + fp._id, children: subtree});
                     }));
                     return tree;
                 };
@@ -263,16 +284,19 @@ class ImprintRepository {
                 const tree = await buildVariableTree(null);
 
                 // Retourner l'objet contenant l'empreinte et son arbre de variables
-                return {text: fp.name, value: fp._id+'-'+'imprint', children: tree};
+                return {text: fp.name, value: fp._id + '-' + 'imprint', children: tree};
             }));
-
-            return imprintVariableTree;
         } catch (error) {
             console.error("Erreur lors de la récupération de l'arbre de variables:", error);
             throw error;
         }
     }
 
+    /**
+     *
+     * @param examId
+     * @returns {Promise<*[]>}
+     */
     async buildVariableTree(examId){
         try {
            const imprints = await Imprint.find();
@@ -288,6 +312,12 @@ class ImprintRepository {
         }
     }
 
+    /**
+     *
+     * @param imprintId
+     * @param examId
+     * @returns {Promise<{isAvailable: boolean, variables: (*&{children: *})[]}>}
+     */
     async buildVariableTreeForImprint(imprintId, examId) {
         try {
             // Étape 1 : Récupérer toutes les variables associées à l'empreinte
@@ -369,6 +399,12 @@ class ImprintRepository {
         }
     }
 
+    /**
+     * calculate imprint for each exam
+     * @param imprintId
+     * @param examId
+     * @returns {Promise<unknown>}
+     */
      async calulateImprintValue(imprintId, examId) {
         //await clearCache();
         return new Promise(async (resolve, reject) => {
@@ -449,6 +485,11 @@ class ImprintRepository {
 
     }
 
+    /**
+     * get confidence index to the exam
+     * @param examId
+     * @returns {Promise<unknown>}
+     */
     async getConfidenceIndex(examId){
         try {
             return new Promise(async (resolve, reject) => {
@@ -480,6 +521,10 @@ class ImprintRepository {
         }
     }
 
+    /**
+     *
+     * @returns {Promise<{averageValue: number, minValue: number, maxValue: number, imprint: *}[]>}
+     */
     async calculateImprintStatisticsForAllExams() {
         try {
             // Étape 1 : Récupérer tous les examens
@@ -536,6 +581,11 @@ class ImprintRepository {
         }
     }
 
+    /**
+     *
+     * @param examId
+     * @returns {Promise<*[]>}
+     */
     async getValueToEachImprint(examId){
         try {
             let imprints = await Imprint.find();
@@ -588,6 +638,11 @@ class ImprintRepository {
         }
     }
 
+    /**
+     *
+     * @param examId
+     * @returns {Promise<this is *[]>}
+     */
     async getAvailableExam(examId){
         try {
             const imprints = await Imprint.find();
@@ -603,14 +658,15 @@ class ImprintRepository {
         }
     }
 
-    /*
-        Get index and imprints for all exam that we will allow to have graphic evolution
-        @param institutionId,
-        @param personId
+    /**
+     * Get index and imprints for all exam that we will allow to have graphic evolution
+     * @param institutionId
+     * @param personId
+     * @returns {Promise<{examDetails: {exam: Query<Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, unknown, any>, institution: Query<Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, unknown, any>, person: Query<Document<unknown, any, InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>>> & Omit<InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>> & {_id: Types.ObjectId}, never> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TVirtuals"> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TInstanceMethods">, Document<unknown, any, InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>>> & Omit<InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>> & {_id: Types.ObjectId}, never> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TVirtuals"> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TInstanceMethods">, ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TQueryHelpers">, InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>>> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TQueryHelpers">, company: Query<Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, unknown, any>}, imprintValue: *[], evolution: {indexValues: *[], imprintsData: *[]}, variableTree: *[]}>}
      */
     async getDatasForEachExam(institutionId, personId) {
         try {
-            const exams = await Exam.find({personId, institutionId});
+            const exams = await examRepository.getExamsByPersonAndInstitution(personId, institutionId);
             const evolution = [];
             const indexValues = [];
             let imprintsData = [];
@@ -632,10 +688,8 @@ class ImprintRepository {
 
             })
 
-            const latestExam = await Exam.findOne({ personId, institutionId })
-                .sort({ createdAt: -1 });
-            console.log(latestExam)
-            const examDetails = await this.getExamById(latestExam._id);
+            const latestExam = await examRepository.getLatestExamByPersonAndInstitution(personId, institutionId);
+            const examDetails = await examRepository.getExamById(latestExam._id);
             const imprintValue = await this.getValueToEachImprint(latestExam._id);
             const variableTree = await this.buildVariableTree(latestExam._id);
             return {examDetails, evolution: {indexValues, imprintsData}, imprintValue, variableTree};
@@ -644,18 +698,6 @@ class ImprintRepository {
         }
     }
 
-    async getExamById(id) {
-        try {
-            const exam = await Examen.findById(id);
-            const person = await Person.findById(exam.personId);
-            const institution = await Institution.findById(exam.institutionId);
-            const company = await Company.findById(person.company_id[0]);
-            return {exam, person, company, institution}
-        } catch (error) {
-            console.error(error)
-            throw error;
-        }
-    }
 
     formatDate(date) {
         const day = String(date.getDate()).padStart(2, '0');
