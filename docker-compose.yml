@@ -1,33 +1,12 @@
-version: "3.9"
+version: '3.8'
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: xkorin_api
-    volumes:
-      - .:/workspace:cached
-      - /workspace/node_modules
+    image: nkot20/xkorin-backend:latest
     ports:
       - "4005:4005"
-
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    ports:
-      - "27018:27017"
-    restart: unless-stopped
     environment:
-      MONGO_INITDB_DATABASE: Xkorin
+      - NODE_ENV=production
     volumes:
-      - mongodb-data:/data/db
-
-  mailhog:
-    image: mailhog/mailhog
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-
-volumes:
-  mongodb-data:
+      - ${DEPLOY_PATH}/.env:/app/.env
+    restart: always
