@@ -4,35 +4,30 @@ const profilRepository = require('../../../repositories/ProfilRepository');
 const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
+const asyncHandler = require('../../../middlewares/asyncHandler');
 const validateSchema = require("../../../middlewares/validationSchema");
 const profilCreateSchema = Joi.object({
     translations: Joi.array().required()
 });
 
 
-router.post('/', validateSchema(profilCreateSchema), async (req, res) => {
-    try {
-
+// Create a new profil
+router.post(
+    '/',
+    validateSchema(profilCreateSchema),
+    asyncHandler(async (req, res) => {
         const profil = await profilRepository.create(req.body.translations);
-        return res.status(200).json({message: "profil saved sucessfuly", profil})
-    } catch (error) {
-        logger.error('Error when adding a profil', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-});
+        res.status(200).json({ message: 'Profil saved successfully', profil });
+    })
+);
 
-router.get('/', async (req, res) => {
-    try {
+// Get all profils
+router.get(
+    '/',
+    asyncHandler(async (req, res) => {
         const profils = await profilRepository.getAll();
-        return res.status(200).send(profils);
-    } catch (error) {
-        logger.error('Error when getting profil', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-});
+        res.status(200).send(profils);
+    })
+);
 
 module.exports = router;

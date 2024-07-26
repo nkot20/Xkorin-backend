@@ -5,18 +5,21 @@ const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
 const validateSchema = require("../../../middlewares/validationSchema");
+const asyncHandler = require('../../../middlewares/asyncHandler');
 
-//get all by language isoCode
-router.get('/:isoCode', async (req, res) => {
-    try {
+
+/**
+ * @route GET /:isoCode
+ * @desc Get all categories by language ISO code. Fetches categories and their translations based on the provided language code
+ * @access Public
+ * @param {string} isoCode - The ISO code for the language
+ */
+router.get(
+    '/:isoCode',
+    asyncHandler(async (req, res) => {
         const response = await categoryRepository.getAllByLangage(req.params.isoCode);
-        res.status(201).send(response);
-    } catch (error) {
-        logger.error("Error when getting categories by language isoCode and her translations", error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
-
-
+        res.status(200).send(response);
+    })
+);
 
 module.exports = router;

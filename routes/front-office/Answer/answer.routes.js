@@ -4,7 +4,8 @@ const answerRepository = require('../../../repositories/AnswerRepository');
 const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
-const validateSchema = require("../../../middlewares/validationSchema");
+const validateSchema = require('../../../middlewares/validationSchema');
+const asyncHandler = require('../../../middlewares/asyncHandler');
 
 const questionOptionSchema = Joi.object({
     questionId: Joi.string().required(),
@@ -14,18 +15,19 @@ const questionOptionSchema = Joi.object({
 
 const schemaAnswer = Joi.array().items(questionOptionSchema);
 
-router.post('/create', validateSchema(schemaAnswer), async (req, res) => {
-    try {
-
+/**
+ * @route POST /create
+ * @desc Create answers for questions
+ * @access Public
+ * @param {Array} body - Array of answer objects containing questionId, optionId, and examId
+ */
+router.post(
+    '/create',
+    validateSchema(schemaAnswer),
+    asyncHandler(async (req, res) => {
         const response = await answerRepository.create(req.body);
         res.status(201).send(response);
-    } catch (error) {
-       throw error;
-    }
-})
-
-
-
-
+    })
+);
 
 module.exports = router;

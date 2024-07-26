@@ -7,6 +7,14 @@ const SubcategoryImprint = require('../models/SubCategoryImprint');
 const imprintRepository = require('../repositories/ImprintRepository');
 const {response} = require("express");
 class ExamRepository {
+<<<<<<< Updated upstream
+=======
+    /**
+     *
+     * @param payload
+     * @returns {Promise<any>}
+     */
+>>>>>>> Stashed changes
     async create(payload) {
         try {
             return await Examen.create(payload);

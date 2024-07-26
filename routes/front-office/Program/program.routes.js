@@ -1,9 +1,9 @@
 const Joi = require('joi');
 const express = require('express');
-const programRepository = require('../../../repositories/ProgramRepository');
 const router = express.Router();
+const asyncHandler = require('../../../middlewares/asyncHandler');
+const programRepository = require('../../../repositories/ProgramRepository');
 const logger = require('../../../logger');
-const authMiddleware = require('../../../middlewares/authenticate.middleware');
 const validateSchema = require("../../../middlewares/validationSchema");
 
 const programCreateSchema = Joi.object({
@@ -19,42 +19,81 @@ const programUpdateSchema = Joi.object({
     targetInstitutionId: Joi.string(),
 });
 
-
-router.post('/create', validateSchema(programCreateSchema), async (req, res) => {
-    try {
+/**
+ * @route POST /create
+ * @desc Create a new program
+ * @access Public
+ * @param {string} name - The name of the program
+ * @param {string} institutionId - The ID of the institution
+ * @param {string} targetInstitutionId - The ID of the target institution
+ */
+router.post(
+    '/create',
+    validateSchema(programCreateSchema),
+    asyncHandler(async (req, res) => {
         const program = await programRepository.create(req.body);
         return res.status(200).send(program);
-    } catch (error) {
-        logger.error('Error when created program', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-});
+    })
+);
 
-router.patch('/update/:id', validateSchema(programUpdateSchema), async (req, res) => {
-    try {
+/**
+ * @route PATCH /update/:id
+ * @desc Update an existing program
+ * @access Public
+ * @param {string} id - The ID of the program to update
+ * @param {Object} body - The data to update the program with
+ */
+router.patch(
+    '/update/:id',
+    validateSchema(programUpdateSchema),
+    asyncHandler(async (req, res) => {
         const program = await programRepository.update(req.params.id, req.body);
         return res.status(200).send(program);
-    } catch (error) {
-        logger.error('Error when created program', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-});
+    })
+);
 
+<<<<<<< Updated upstream
 // get program by institutionId
 router.get('/:institutionId', async (req, res) => {
     try {
+=======
+/**
+ * @route GET /:institutionId/no-pagination/
+ * @desc List programs by institution without pagination
+ * @access Public
+ * @param {string} institutionId - The ID of the institution
+ */
+router.get(
+    '/:institutionId/no-pagination/',
+    asyncHandler(async (req, res) => {
+        const response = await programRepository.listProgramsByInstitutionWithoutPagination(req.params.institutionId);
+        res.status(200).send(response);
+    })
+);
+
+/**
+ * @route GET /:institutionId
+ * @desc List programs by institution with pagination
+ * @access Public
+ * @param {string} institutionId - The ID of the institution
+ * @param {number} [page=1] - The page number for pagination
+ * @param {number} [limit=10] - The number of items per page
+ * @param {string} [search=''] - Search query
+ * @param {string} [order='asc'] - Sorting order
+ * @param {string} [sort='createdAt'] - Field to sort by
+ */
+router.get(
+    '/:institutionId',
+    asyncHandler(async (req, res) => {
+>>>>>>> Stashed changes
         const options = {
             page: parseInt(req.query.page) || 1,
-            limit: req.query.limit || 10,
+            limit: parseInt(req.query.limit) || 10,
             search: req.query.search || '',
             sortDirection: req.query.order === 'asc' ? -1 : 1,
             sortBy: req.query.sort || 'createdAt',
         };
-        const response = await programRepository.listProgramsByInstitution(req.params.institutionId,options);
+        const response = await programRepository.listProgramsByInstitution(req.params.institutionId, options);
         const pagination = {
             hasNextPage: response.hasNextPage,
             hasPrevPage: response.hasPrevPage,
@@ -66,53 +105,49 @@ router.get('/:institutionId', async (req, res) => {
             totalDocs: response.totalDocs,
             totalPages: response.totalPages,
         };
-        res.status(201).send({programs: response.docs, pagination});
-    } catch (error) {
-        logger.error('Error when getting institution programs', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-});
+        res.status(200).send({ programs: response.docs, pagination });
+    })
+);
 
-// archive program
-router.patch('/archived/:id', async (req, res) => {
-    try {
+/**
+ * @route PATCH /archived/:id
+ * @desc Archive a program
+ * @access Public
+ * @param {string} id - The ID of the program to archive
+ */
+router.patch(
+    '/archived/:id',
+    asyncHandler(async (req, res) => {
         const program = await programRepository.archivedProgram(req.params.id);
         return res.status(200).send(program);
-    } catch (error) {
-        logger.error('Error when archived program', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-});
+    })
+);
 
-//get all
-router.get('/', async (req, res) => {
-    try {
+/**
+ * @route GET /
+ * @desc Get all programs
+ * @access Public
+ */
+router.get(
+    '/',
+    asyncHandler(async (req, res) => {
         const programs = await programRepository.getAll();
         return res.status(200).send(programs);
-    } catch (error) {
-        logger.error('Error when getting all program', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-});
+    })
+);
 
-//get program details
-router.get('/details/:id', async (req, res) => {
-    try {
+/**
+ * @route GET /details/:id
+ * @desc Get program details by ID
+ * @access Public
+ * @param {string} id - The ID of the program
+ */
+router.get(
+    '/details/:id',
+    asyncHandler(async (req, res) => {
         const program = await programRepository.getById(req.params.id);
         return res.status(200).send(program);
-    } catch (error) {
-        logger.error('Error when getting program details', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-});
-
+    })
+);
 
 module.exports = router;

@@ -6,31 +6,36 @@ const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
 const validateSchema = require("../../../middlewares/validationSchema");
 
+const asyncHandler = require('../../../middlewares/asyncHandler');
 
 
 
-// Route pour enregistrer une question et ses traductions
-router.post('/', async (req, res) => {
-    try {
+/**
+ * @route POST /questions
+ * @desc Create a new question with translations
+ * @access Public
+ */
+router.post(
+    '/',
+    asyncHandler(async (req, res) => {
         const { variableId, questions, datas } = req.body;
         const createdQuestion = await questionRepository.createQuestionWithTranslations(variableId, questions, datas);
-        res.status(201).send(createdQuestion);
-    } catch (error) {
-        logger.error("Error when creating the question and its translations:", error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+        res.status(201).json(createdQuestion);
+    })
+);
 
-// retrieve question from variable
-router.get('/variable/:id', async (req, res) => {
-    try {
+/**
+ * @route GET /questions/variable/:id
+ * @desc Retrieve questions associated with a specific variable
+ * @access Public
+ */
+router.get(
+    '/variable/:id',
+    asyncHandler(async (req, res) => {
         const questions = await questionRepository.retrieveQuestionFromAVariable(req.params.id);
-        res.status(200).send(questions);
-    } catch (error) {
-        logger.error("Error when searching for variable questions", error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+        res.status(200).json(questions);
+    })
+);
 
 
 

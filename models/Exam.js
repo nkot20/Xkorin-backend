@@ -29,4 +29,4 @@ const examSchema = Schema({
 
 
 examSchema.plugin(aggregatePaginate);
-module.exports = quiz = mongoose.model('exam', examSchema);
+module.exports = Exam = mongoose.model('exam', examSchema);

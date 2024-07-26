@@ -4,31 +4,38 @@ const examRepository = require('../../../repositories/ExamRepository');
 const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
-const validateSchema = require("../../../middlewares/validationSchema");
+const validateSchema = require('../../../middlewares/validationSchema');
+const asyncHandler = require('../../../middlewares/asyncHandler');
 
 const examCreateSchema = Joi.object({
-    institutionId: Joi.string().required(),
     personId: Joi.string().required(),
     aim: Joi.string().required(),
-    amount: Joi.number().required()
+    amount: Joi.number().required(),
+    programId: Joi.string().required(),
 });
 
-
-router.post('/create', validateSchema(examCreateSchema), async (req, res) => {
-    try {
+/**
+ * @route POST /create
+ * @desc Create a new exam
+ * @access Public
+ * @param {Object} body - Exam data including institutionId, personId, aim, and amount
+ */
+router.post(
+    '/create',
+    validateSchema(examCreateSchema),
+    asyncHandler(async (req, res) => {
         const exam = {
-            institutionId: req.body.institutionId,
             personId: req.body.personId,
             aim: req.body.aim,
-            amount: req.body.amount
-        }
+            amount: req.body.amount,
+            programId: req.body.programId
+        };
         const response = await examRepository.create(exam);
         res.status(201).send(response);
-    } catch (error) {
-       throw error;
-    }
-})
+    })
+);
 
+<<<<<<< Updated upstream
 //get all person exams
 router.get('/:personId', async (req, res) => {
     try {
@@ -39,18 +46,42 @@ router.get('/:personId', async (req, res) => {
         res.status(500).json({ message: 'Error when getting person exam' });
     }
 });
+=======
+/**
+ * @route GET /:personId
+ * @desc Get all exams for a specific person
+ * @access Public
+ * @param {string} personId - The ID of the person
+ */
+router.get(
+    '/:personId',
+    asyncHandler(async (req, res) => {
+        const exams = await examRepository.getExamByPersonId(req.params.personId);
+        let response = [];
 
-//exam details
-router.get('/details/:examId', async (req, res) => {
-    try {
+        await Promise.all(
+            exams.map(async (exam) => {
+                const indiceAvailable = await imprintRepository.getAvailableExam(exam.exam._id);
+                response.push({ exam: exam.exam, indiceAvailable });
+            })
+        );
+        return res.status(200).send(response);
+    })
+);
+>>>>>>> Stashed changes
+
+/**
+ * @route GET /details/:examId
+ * @desc Get details of an exam by ID
+ * @access Public
+ * @param {string} examId - The ID of the exam
+ */
+router.get(
+    '/details/:examId',
+    asyncHandler(async (req, res) => {
         const response = await examRepository.getExamById(req.params.examId);
-        res.status(201).send(response);
-    } catch (error) {
-        logger.error("Error when getting person exam", error);
-        res.status(500).json({ message: 'Error when getting person exam' });
-    }
-});
-
-
+        res.status(200).send(response);
+    })
+);
 
 module.exports = router;

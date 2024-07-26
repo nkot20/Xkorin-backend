@@ -1,24 +1,33 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  backend:
-    build: ./backend
-    container_name: my-node-app-backend
-    environment:
-      - MONGODB_URI=/run/secrets/mongodb_uri
-      - NODE_ENV=development
-      - PORT=4005
-    secrets:
-      - mongodb_uri
-    networks:
-      - mongo-network
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: xkorin_api
+    volumes:
+      - .:/workspace:cached
+      - /workspace/node_modules
     ports:
       - "4005:4005"
 
-secrets:
-  mongodb_uri:
-    external: true
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27018:27017"
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: Xkorin
+    volumes:
+      - mongodb-data:/data/db
 
-networks:
-  mongo-network:
-    external: true
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  mongodb-data:

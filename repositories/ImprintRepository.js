@@ -20,6 +20,7 @@ const { setCache, getCache, clearCache } = require('../common/cache');
 const Examen = require("../models/Exam");
 const Institution = require("../models/Institution");
 const Company = require("../models/Company");
+const ExamState = require('../models/ExamState');
 
 
 
@@ -38,11 +39,11 @@ class ImprintRepository {
         try {
             // Fonction récursive pour trouver les derniers fils sans fils
             // Fonction récursive pour trouver les derniers fils sans fils
-            const findLastChildrenWithoutChildren = async (variableId) => {
-                const children = await Variable.find({ parent: variableId });
+            const findLastChildrenWithoutChildren = async (variable) => {
+                const children = await Variable.find({ parent: variable._id });
                 if (children.length === 0) {
-                    const variable = await Variable.findById(variableId);
-                    const translatedName = await getVariableTranslation(variableId, languageId);
+                    console.log("I want to see variable ", variable);
+                    const translatedName = await getVariableTranslation(variable, languageId);
                     return [{
                         _id: variable._id,
                         name: translatedName,
@@ -56,18 +57,20 @@ class ImprintRepository {
             };
 
             // Fonction pour récupérer la traduction d'une variable
-            const getVariableTranslation = async (variableId, languageId) => {
+            const getVariableTranslation = async (variable, languageId) => {
+                console.log("I want to see the second variable ", variable);
                 const translation = await VariableTranslation.findOne({
-                    variableId,
+                    variableId: variable._id,
                     languageId
                 });
-                return translation ? translation.label : null;
+
+                return translation ? translation.label : variable.name;
             };
 
             // Utiliser `Promise.all` pour exécuter les recherches en parallèle pour chaque variable sans père
             const responsePromises = orphanVariables.map(async (variable) => {
                 const lastChildren = await findLastChildrenWithoutChildren(variable._id);
-                const translatedName = await getVariableTranslation(variable._id, languageId);
+                const translatedName = await getVariableTranslation(variable, languageId);
 
                 return {
                     _id: variable._id,
@@ -141,7 +144,6 @@ class ImprintRepository {
 
                 // Utiliser `Promise.all` pour traiter chaque orphelin en parallèle afin de trouver les variables fueilles de chaque variable racine
                 const updatedOrphanVariables = await Promise.all(variablesWithFirstChild.map(async (variable) => {
-                    console.log(variable)
                     // Utiliser `Promise.all` pour traiter chaque `lastChildren` en parallèle
                     const updatedLastChildren = await Promise.all(variable.children.map(async (child) => {
                         console.log(child)
@@ -181,6 +183,199 @@ class ImprintRepository {
     }
 
 
+<<<<<<< Updated upstream
+=======
+
+    /**
+     *
+     * @param subcategoryId
+     * @param isoCode (language)
+     * @param profilId
+     * @param examId
+     * @returns {Promise<*[]>}
+     */
+    async getRemainingVariablesForImprints(subcategoryId, isoCode, profilId, examId) {
+        try {
+            // Find imprint IDs for the given subcategory
+            let imprintIds = await subcategoryImprintRepository.getImprintIdBySubcategoryId(subcategoryId);
+
+            // Find the language ID for the provided ISO code
+            const language = await Language.findOne({ isoCode });
+            if (!language) {
+                throw new Error('Language not found');
+            }
+            const languageId = language._id;
+
+            // Fetch imprints based on the retrieved IDs and sort them
+            const imprints = await Imprint.find({ _id: { $in: imprintIds } }).sort({ number: 1 });
+
+            let remainingVariablesWithImprints = [];
+
+            await Promise.all(imprints.map(async (imprint) => {
+                // Retrieve variables without a parent for the specified imprints
+                const variables = await Variable.find({
+                    imprintId: imprint._id,
+                    parent: null
+                });
+
+                // Container for variables and their children
+                const variablesWithFirstChild = [];
+                await Promise.all(variables.map(async (variable) => {
+                    const firstsChild = await Variable.find({ parent: variable._id });
+                    const orphanVariables = await this.getLastChildrenForOrphans(firstsChild, languageId);
+
+                    variablesWithFirstChild.push({
+                        variable,
+                        children: orphanVariables
+                    });
+                }));
+
+
+                // Helper function to check if a variable has already been evaluated
+                const isVariableEvaluated = async (variableId) => {
+                    const examState = await ExamState.findOne({
+                        variableId,
+                        examId,
+                    });
+                    return !!examState; // Return true if evaluated, false otherwise
+                };
+
+                // Function to get translated questions for a variable
+                const getTranslatedQuestionForVariable = async (variableId) => {
+                    const questions = await Question.find({ variableId, profilId });
+                    let questionsTranslation = [];
+                    await Promise.all(questions.map(async (question) => {
+                        const questionTranslation = await QuestionTranslation.findOne({
+                            questionId: question._id,
+                            languageId: languageId
+                        });
+                        if (questionTranslation) {
+                            question.label = questionTranslation.label;
+                            questionsTranslation.push(question);
+                        }
+                    }));
+
+                    return questionsTranslation;
+                };
+
+                // Process each variable and its children to check for remaining variables
+                const updatedOrphanVariables = await Promise.all(variablesWithFirstChild.map(async (variable) => {
+                    const updatedChildren = await Promise.all(variable.children.map(async (child) => {
+                        // Check if the current child variable has been evaluated
+                        const isEvaluated = await isVariableEvaluated(child._id);
+
+                        if (!isEvaluated) {
+                            const lastChildren = await Promise.all(child.lastChildren.map(async (leaf) => {
+                                const leafEvaluated = await isVariableEvaluated(leaf._id);
+
+                                if (!leafEvaluated) {
+                                    leaf.questions = await getTranslatedQuestionForVariable(leaf._id);
+                                    return leaf;
+                                } else {
+                                    return null; // Skip this leaf if it has been evaluated
+                                }
+                            }));
+
+                            const remainingLastChildren = lastChildren.filter(leaf => leaf !== null);
+
+                            if (remainingLastChildren.length > 0) {
+                                child.lastChildren = remainingLastChildren;
+                                return child;
+                            } else {
+                                return null; // Skip this child if it has no remaining last children
+                            }
+                        } else {
+                            return null; // Skip this child if it has been evaluated
+                        }
+                    }));
+
+                    // Filter out evaluated children
+                    const remainingChildren = updatedChildren.filter(child => child !== null);
+
+                    // Return the variable if it still has remaining children
+                    if (remainingChildren.length > 0) {
+                        variable.children = remainingChildren;
+                        return variable;
+                    } else {
+                        return null; // Skip this variable if it has no remaining children
+                    }
+                }));
+
+                // Filter out variables with no remaining children
+                const nonEmptyVariables = updatedOrphanVariables.filter(variable => variable !== null);
+
+                if (nonEmptyVariables.length > 0) {
+                    remainingVariablesWithImprints.push({
+                        imprint,
+                        variables: nonEmptyVariables.map(v => ({
+                            variable: v.variable,
+                            children: v.children
+                        })),
+                    });
+                }
+            }));
+
+            return remainingVariablesWithImprints;
+        } catch (error) {
+            console.error(error);
+            throw new Error('An error occurred while fetching the remaining variables.');
+        }
+    }
+
+
+    /**
+     * check if exam has been completed
+     * @param subcategoryId
+     * @param examId
+     * @returns {Promise<*[]>}
+     */
+    async isExamComplete(subcategoryId, examId) {
+        try {
+            // Obtenir toutes les imprintIds d'une sous-catégorie
+            let imprintIds = await subcategoryImprintRepository.getImprintIdBySubcategoryId(subcategoryId);
+
+            // Récupérer les empreintes
+            const imprints = await Imprint.find({ _id: { $in: imprintIds } }).sort({ number: 1 });
+
+            let allVariableIds = [];
+
+            await Promise.all(imprints.map(async (imprint) => {
+                // Récupérer les variables sans parent pour les empreintes spécifiées
+                const variables = await Variable.find({
+                    imprintId: imprint._id,
+                    parent: null
+                });
+
+                await Promise.all(variables.map(async (variable) => {
+                    const firstsChild = await Variable.find({ parent: ObjectId(variable._id) });
+                    const orphanVariables = await this.getLastChildrenForOrphans(firstsChild, languageId);
+
+                    orphanVariables.forEach(child => {
+                        allVariableIds.push(child._id);
+                    });
+                }));
+            }));
+
+            // Obtenir les variables déjà répondues
+            const answeredVariableIds = await ExamState.find({ examId }).distinct('variableId');
+
+            // Vérifier si toutes les variables attendues sont présentes dans answeredVariableIds
+            return allVariableIds.every(variableId => answeredVariableIds.includes(variableId.toString()));
+
+        } catch (error) {
+            console.error(error);
+            throw new Error('An error occurred while checking if the exam is complete.');
+        }
+    }
+
+
+    /**
+     *
+     * @param footprintId
+     * @param variableId
+     * @returns {Promise<awaited Query<UpdateResult, module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? DocType : unknown extends Document ? Require_id<module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? DocType : unknown> : (Document<unknown, any, module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? DocType : unknown> & MergeType<Require_id<module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? DocType : unknown>, module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? TVirtuals : unknown & module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? TInstanceMethods : unknown>), module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? TQueryHelpers : unknown, module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? DocType : unknown> & module:mongoose.Schema<any, Model<EnforcedDocType, any, any, any>, {}, {}, {}, {}, DefaultSchemaOptions, ApplySchemaOptions<ObtainDocumentType<any, EnforcedDocType, TSchemaOptions>, TSchemaOptions>> extends Schema<infer EnforcedDocType, infer M, infer TInstanceMethods, infer TQueryHelpers, infer TVirtuals, infer TStaticMethods, infer TSchemaOptions, infer DocType> ? TQueryHelpers : unknown>}
+     */
+>>>>>>> Stashed changes
     async addVariableToFootprint(footprintId, variableId) {
 
         try {
@@ -689,3 +884,5 @@ class ImprintRepository {
 
 const imprintRepository = new ImprintRepository();
 module.exports = imprintRepository;
+
+
