@@ -140,7 +140,7 @@ router.post('/sign-in', validateSchema(loginSchema), asyncHandler(async (req, re
             person: person
           });
           return res.json({
-            message: 'Authentication successful', accessToken, refreshToken, user: newUser
+            message: 'Authentication successful', accessToken, user: newUser
           });
         }
         if (hasRole(user.role, ROLE.INSTITUTION_ADMIN) || hasRole(user.role, ROLE.INSTITUTION_EMPLOYEE)) {
@@ -150,7 +150,7 @@ router.post('/sign-in', validateSchema(loginSchema), asyncHandler(async (req, re
             institution
           });
           return res.json({
-            message: 'Authentication successful', accessToken, refreshToken, user: newUser
+            message: 'Authentication successful', accessToken, user: newUser
           });
         }
 =======
@@ -245,7 +245,7 @@ router.post('/sign-in-with-token', passport.authenticate('jwt', { session: false
       person: person
     });
     return res.json({
-      message: 'Authentication successful', accessToken, refreshToken, user: newUser
+      message: 'Authentication successful', accessToken, user: newUser
     });
 =======
     const newUser = { ...user, company, person };

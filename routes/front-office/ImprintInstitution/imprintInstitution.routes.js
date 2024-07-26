@@ -1,6 +1,7 @@
 const Joi = require('joi');
 const express = require('express');
 const asyncHandler = require('../../../middlewares/asyncHandler'); // Assuming asyncHandler is defined here
+const impRepository = require('../../../repositories/ImprintRepository');
 const imprintInstitutionRepository = require('../../../repositories/ImprintInstitutionRepository');
 const validateSchema = require("../../../middlewares/validationSchema");
 const logger = require("../../../logger");

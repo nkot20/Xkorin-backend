@@ -57,6 +57,14 @@ class ProgramRepository {
         }
     }
 
+    async listProgramsByInstitutionWithoutPagination(institutionId) {
+        try {
+            return await Program.find({institutionId});
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async listProgramsByInstitution(institutionId, options) {
         try {
             const aggregate = Program.aggregate([

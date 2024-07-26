@@ -52,11 +52,7 @@ router.patch(
     })
 );
 
-<<<<<<< Updated upstream
-// get program by institutionId
-router.get('/:institutionId', async (req, res) => {
-    try {
-=======
+
 /**
  * @route GET /:institutionId/no-pagination/
  * @desc List programs by institution without pagination
@@ -85,7 +81,6 @@ router.get(
 router.get(
     '/:institutionId',
     asyncHandler(async (req, res) => {
->>>>>>> Stashed changes
         const options = {
             page: parseInt(req.query.page) || 1,
             limit: parseInt(req.query.limit) || 10,

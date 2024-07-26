@@ -1,6 +1,7 @@
 const Joi = require('joi');
 const express = require('express');
 const examRepository = require('../../../repositories/ExamRepository');
+const imprintRepository = require('../../../repositories/ImprintRepository');
 const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
@@ -39,11 +40,17 @@ router.post(
 //get all person exams
 router.get('/:personId', async (req, res) => {
     try {
-        const response = await examRepository.getExamByPersonId(req.params.personId);
-        res.status(201).send(response);
+        const exams = await examRepository.getExamByPersonId(req.params.personId);
+        let response = [];
+
+        await Promise.all(exams.map(async (exam) => {
+            const indiceAvailable = await imprintRepository.getAvailableExam(exam.exam._id);
+            response.push({ exam: exam.exam, indiceAvailable });
+        }));
+        return res.status(201).send(response);
     } catch (error) {
         logger.error("Error when getting person exam", error);
-        res.status(500).json({ message: 'Error when getting person exam' });
+        return res.status(500).json({ message: 'Error when getting person exam' });
     }
 });
 =======

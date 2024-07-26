@@ -18,10 +18,10 @@ router.get(
     })
 );
 
+
+
 /**
-<<<<<<< Updated upstream
  * update institution after first login
-=======
  * @route GET /type/:type
  * @desc Get institutions by type
  * @access Public
@@ -42,7 +42,6 @@ router.get(
  * @param {string} institutionId - The ID of the institution
  * @param {string} userId - The ID of the user
  * @param {Object} body - The data to update
->>>>>>> Stashed changes
  */
 router.patch(
     '/update-first-login/:institutionId/user/:userId',

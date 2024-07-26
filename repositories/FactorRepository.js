@@ -1,3 +1,4 @@
+/*
 require('dotenv').config();
 
 const Footprint = require('../models/Imprint');
@@ -68,4 +69,4 @@ class FactorRepository {
 }
 
 const factorRepository = new FactorRepository();
-module.exports = factorRepository;
+module.exports = factorRepository;*/
