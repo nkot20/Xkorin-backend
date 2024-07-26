@@ -125,7 +125,6 @@ jobs:
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             npm install
-            npm install pm2
             pm2 delete xkorin
             pm2 start npm --name "xkorin" -- start
             w pm2 show app1
