@@ -36,24 +36,6 @@ router.post(
     })
 );
 
-<<<<<<< Updated upstream
-//get all person exams
-router.get('/:personId', async (req, res) => {
-    try {
-        const exams = await examRepository.getExamByPersonId(req.params.personId);
-        let response = [];
-
-        await Promise.all(exams.map(async (exam) => {
-            const indiceAvailable = await imprintRepository.getAvailableExam(exam.exam._id);
-            response.push({ exam: exam.exam, indiceAvailable });
-        }));
-        return res.status(201).send(response);
-    } catch (error) {
-        logger.error("Error when getting person exam", error);
-        return res.status(500).json({ message: 'Error when getting person exam' });
-    }
-});
-=======
 /**
  * @route GET /:personId
  * @desc Get all exams for a specific person
@@ -75,7 +57,6 @@ router.get(
         return res.status(200).send(response);
     })
 );
->>>>>>> Stashed changes
 
 /**
  * @route GET /details/:examId

@@ -130,31 +130,6 @@ router.post('/sign-in', validateSchema(loginSchema), asyncHandler(async (req, re
           company: company,
           person: person
         });
-<<<<<<< Updated upstream
-        if (hasRole(user.role, ROLE.COMPANY_ADMIN)) {
-          const person = await personRepository.findPersonByEmail(user.email)
-          const company = await companyRepository.getCompany(person.company_id[0]);
-          let newUser = user._doc
-          newUser = Object.assign({}, newUser, {
-            company: company,
-            person: person
-          });
-          return res.json({
-            message: 'Authentication successful', accessToken, user: newUser
-          });
-        }
-        if (hasRole(user.role, ROLE.INSTITUTION_ADMIN) || hasRole(user.role, ROLE.INSTITUTION_EMPLOYEE)) {
-          const institution = await institutionRepository.getByAdminId(user._id);
-          let newUser = user._doc
-          newUser = Object.assign({}, newUser, {
-            institution
-          });
-          return res.json({
-            message: 'Authentication successful', accessToken, user: newUser
-          });
-        }
-=======
->>>>>>> Stashed changes
         return res.json({
           message: 'Authentication successful', accessToken, user: newUser
         });
@@ -238,7 +213,6 @@ router.post('/sign-in-with-token', passport.authenticate('jwt', { session: false
   if (hasRole(user.role, ROLE.COMPANY_ADMIN)) {
     const person = await personRepository.findPersonByEmail(user.email);
     const company = await companyRepository.getCompany(person.company_id[0]);
-<<<<<<< Updated upstream
     let newUser = user;
     newUser = Object.assign({}, newUser, {
       company: company,
@@ -247,10 +221,6 @@ router.post('/sign-in-with-token', passport.authenticate('jwt', { session: false
     return res.json({
       message: 'Authentication successful', accessToken, user: newUser
     });
-=======
-    const newUser = { ...user, company, person };
-    return res.json({ message: 'Authentication successful', accessToken, user: newUser });
->>>>>>> Stashed changes
   }
 
   if (hasRole(user.role, ROLE.INSTITUTION_ADMIN) || hasRole(user.role, ROLE.INSTITUTION_EMPLOYEE)) {
