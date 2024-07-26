@@ -5,7 +5,8 @@ const { Schema } = mongoose;
 const aggregatePaginate = require('mongoose-aggregate-paginate-v2');
 
 const institutionSchema = Schema({
-  adminId: [{ type: Schema.Types.ObjectId, ref: 'users' }],
+  adminId: { type: Schema.Types.ObjectId, ref: 'users' },
+  subCategoryId: { type: Schema.Types.ObjectId, ref: 'subcategories' },
   name: {
     type: String,
     required: true,
@@ -16,13 +17,12 @@ const institutionSchema = Schema({
   status: {
     type: String,
     enum: ['Active', 'Inactive'],
-    default: 'Active',
+    default: 'Inactive',
     required: true,
   },
   type: {
     type: String,
     enum: ['Financing', 'Grant', 'Support'],
-    required: true,
   },
   phoneNumber: {
     type: String,

@@ -1,22 +1,26 @@
 const companyRepository = require('../repositories/CompanyRepository');
 const userRepository = require('../repositories/UserRepository');
+const institutionRepository = require('../repositories/InstitutionRepository');
 const personRepository = require('../repositories/PersonRepository');
 const User = require("../models/User");
 const emailService = require("./emailService");
 const jwt = require("jsonwebtoken");
 const config = require('dotenv').config();
+const Role = require('../config/role');
 const fs = require('fs');
 const path = require('path');
 const Helper = require('../common/Helper');
+
+generateAccessToken = (user) => {
+    const payload = { sub: user._id };
+    return jwt.sign(payload, config.parsed.JWT_SECRET, { expiresIn: '1h' });
+};
 
 class AuthService {
 
 
 
-    generateAccessToken = (user) => {
-        const payload = { sub: user._id };
-        return jwt.sign(payload, config.parsed.JWT_SECRET, { expiresIn: '1h' });
-    };
+
 
     /**
      * Vérifie si le token est encore valide en fonction de sa date d'expiration.
@@ -41,7 +45,7 @@ class AuthService {
                 user.isValided = true;
                 user.validationToken = '';
                 user.validationExpirationToken = '';
-                await User.updateOne(user);
+                await User.updateOne({_id: user._id},user);
                 return user;
             } else {
                 throw new Error('Token has expired')
@@ -63,83 +67,155 @@ class AuthService {
                 throw new Error("User already exists");
             }
 
-            // Vérification si l'entreprise existe déjà
-            console.log("Checking if company already exists");
-            const oldCompany = await companyRepository.getCompanyByName(datas.company);
-            if (oldCompany) {
-                console.warn("Company already exists", oldCompany);
-                throw new Error("Company already exists");
+            // Vérification si l'entité existe déjà (entreprise ou institution)
+            if (datas.type === 'company') {
+                const oldCompany = await companyRepository.getCompanyByName(datas.company);
+                if (oldCompany) {
+                    console.warn("Company already exists", oldCompany);
+                    throw new Error("Company already exists");
+                }
+            } else if (datas.type === 'institution') {
+                const oldInstitution = await institutionRepository.getByName(datas.company);
+                if (oldInstitution) {
+                    console.warn("Institution already exists", oldInstitution);
+                    throw new Error("Institution already exists");
+                }
+            } else {
+                throw new Error("Invalid registration type");
             }
 
-            // Création des données utilisateur et création d'un nouvel utilisateur
-            console.log("Creating new user");
-            const userDatas = {
-                name: datas.name,
-                email: datas.email,
-                password: datas.password,
-                role: [3]
-            };
-            const user = new User(userDatas);
+            // Utilisation de la stratégie de registration appropriée
+            const registrationStrategy = RegistrationFactory.getRegistrationStrategy(datas.type);
+            const result = await registrationStrategy.register(datas);
 
-            // Enregistrement de l'utilisateur avec gestion des erreurs
-            console.log("Saving new user");
-            await user.save();
-
-            // Génération du token et définition de la date d'expiration
-            console.log("Generating token and setting expiration");
-            const token = this.generateAccessToken(user);
-            user.validationExpirationToken = new Date(Date.now() + 3600000); // +1 heure
-            user.validationToken = token;
-            user.validLink = `${process.env.CONFIRM_ACCOUNT_LINK}/${token}`;
-
-            // Mise à jour de l'utilisateur avec le token de validation et la date d'expiration
-            console.log("Updating user with token information");
-            const newUser = await userRepository.updateUser(user._id, user);
-
-            // Création des données entreprise et création d'une nouvelle entreprise
-            console.log("Creating new company");
-            const companyDatas = {
-                name: datas.company,
-                adminId: user._id,
-                agreements: datas.agreements
-            };
-            const company = await companyRepository.createCompany(companyDatas);
-
-            // Création des données personne et création d'une nouvelle personne
-            console.log("Creating new person");
-            const personDatas = {
-                name: datas.name,
-                email: datas.email,
-                company_id: company._id,
-                profil_id: datas.profil,
-                subcategory_id: datas.subcategory,
-                user_id: user._id,
-            };
-            const person = await personRepository.create(personDatas);
-
-            // Conversion de l'image en Base64 et envoi de l'e-mail de validation
-            console.log("Converting image to Base64 and sending validation email");
-            const imagePath = path.join(__dirname, '../public/logos/xkorin.png');
-            const base64String = await Helper.imageToBase64(imagePath);
-
-            const emailDatas = {
-                name: datas.name,
-                email: datas.email,
-                validLink: user.validLink,
-                logoXkorin: base64String
-            };
-            await emailService.sendMailForValidateEmail(emailDatas);
-
-            // Retourne la personne créée
             console.log("Registration process completed successfully");
-            return person;
+            return result;
+
         } catch (error) {
             console.error("An error occurred during registration:", error);
-            throw error;
+            throw new Error(error.message);
         }
     }
 
+
 }
+
+class RegistrationFactory {
+    static getRegistrationStrategy(type) {
+        switch (type) {
+            case 'company':
+                return new CompanyRegistrationStrategy();
+            case 'institution':
+                return new InstitutionRegistrationStrategy();
+            default:
+                throw new Error('Invalid registration type');
+        }
+    }
+}
+
+class RegistrationStrategy {
+    async register(datas) {
+        throw new Error('This method should be overridden');
+    }
+}
+
+class CompanyRegistrationStrategy extends RegistrationStrategy {
+    async register(datas) {
+        // Logique de vérification et création de l'utilisateur
+        const userDatas = {
+            name: datas.name,
+            email: datas.email,
+            password: datas.password,
+            role: [Role.COMPANY_ADMIN],
+        };
+        const user = new User(userDatas);
+        await user.save();
+
+        // Génération du token et mise à jour de l'utilisateur
+        const token = generateAccessToken(user);
+        user.validationExpirationToken = new Date(Date.now() + 3600000);
+        user.validationToken = token;
+        user.validLink = `${process.env.CONFIRM_ACCOUNT_LINK}/${token}`;
+        await userRepository.updateUser(user._id, user);
+
+        // Création de l'entreprise
+        const companyDatas = {
+            name: datas.company,
+            adminId: user._id,
+            agreements: datas.agreements,
+        };
+        const company = await companyRepository.createCompany(companyDatas);
+
+        // Création de la personne
+        const personDatas = {
+            name: datas.name,
+            email: datas.email,
+            company_id: company._id,
+            profil_id: datas.profil,
+            subcategory_id: datas.subcategory,
+            user_id: user._id,
+        };
+        const person = await personRepository.create(personDatas);
+
+        // Envoi de l'email de validation
+        const imagePath = path.join(__dirname, '../public/logos/xkorin.png');
+        const base64String = await Helper.imageToBase64(imagePath);
+        const emailDatas = {
+            name: datas.name,
+            email: datas.email,
+            validLink: user.validLink,
+            logoXkorin: base64String,
+        };
+        await emailService.sendMailForValidateEmail(emailDatas);
+
+        return person;
+    }
+}
+
+class InstitutionRegistrationStrategy extends RegistrationStrategy {
+    async register(datas) {
+        // Logique de vérification et création de l'utilisateur
+        const userDatas = {
+            name: datas.name,
+            email: datas.email,
+            password: datas.password,
+            role: [Role.INSTITUTION_ADMIN],
+        };
+        const user = new User(userDatas);
+        await user.save();
+
+        // Génération du token et mise à jour de l'utilisateur
+        const token = generateAccessToken(user);
+        user.validationExpirationToken = new Date(Date.now() + 3600000);
+        user.validationToken = token;
+        user.validLink = `${process.env.CONFIRM_ACCOUNT_LINK}/${token}`;
+        await userRepository.updateUser(user._id, user);
+
+        // Création de l'institution
+        const institutionDatas = {
+            name: datas.company,
+            adminId: user._id,
+            status: "Active",
+            agreements: datas.agreements,
+            subcategory_id: datas.subcategory,
+        };
+        const institution = await institutionRepository.create(institutionDatas);
+
+        // Envoi de l'email de validation
+        const imagePath = path.join(__dirname, '../public/logos/xkorin.png');
+        const base64String = await Helper.imageToBase64(imagePath);
+        const emailDatas = {
+            name: datas.name,
+            email: datas.email,
+            validLink: user.validLink,
+            logoXkorin: base64String,
+        };
+        await emailService.sendMailForValidateEmail(emailDatas);
+
+        return institution;
+    }
+}
+
 
 const authRepository = new AuthService();
 module.exports = authRepository;

@@ -5,40 +5,34 @@ const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
 const validateSchema = require("../../../middlewares/validationSchema");
+const asyncHandler = require('../../../middlewares/asyncHandler');
 
+router.post(
+    '/',
+    asyncHandler(async (req, res) => {
+        const { category, translation } = req.body;
+        const response = await categoryRepository.create(category, translation);
+        res.status(201).json(response);
+    })
+);
 
-router.post('/', async (req, res) => {
-    try {
-        const response = await categoryRepository.create(req.body.category, req.body.translation);
-        res.status(201).send(response);
-    } catch (error) {
-        logger.error("Error when creating the category and her translation:", error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
-
-//get all
-router.get('/', async (req, res) => {
-    try {
+router.get(
+    '/',
+    asyncHandler(async (req, res) => {
         const response = await categoryRepository.getAll();
-        res.status(201).send(response);
-    } catch (error) {
-        logger.error("Error when getting categories and her translations", error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+        return res.status(200).json(response);
+    })
+);
 
-//get all by language isoCode
-router.get('/:isoCode', async (req, res) => {
-    try {
-        const response = await categoryRepository.getAllByLangage(req.params.isoCode);
-        res.status(201).send(response);
-    } catch (error) {
-        logger.error("Error when getting categories by language isoCode and her translations", error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+router.get(
+    '/:isoCode',
+    asyncHandler(async (req, res) => {
+        const { isoCode } = req.params;
+        const response = await categoryRepository.getAllByLangage(isoCode);
+        res.status(200).json(response);
+    })
+);
 
-
+module.exports = router;
 
 module.exports = router;

@@ -5,7 +5,7 @@ const { Schema } = mongoose;
 const aggregatePaginate = require('mongoose-aggregate-paginate-v2');
 
 const examSchema = Schema({
-    institutionId: { type: Schema.Types.ObjectId, ref: 'institution' },
+    programId: { type: Schema.Types.ObjectId, ref: 'program' },
     personId: { type: Schema.Types.ObjectId, ref: 'person' },
     aim: {
         type: String,
@@ -29,4 +29,4 @@ const examSchema = Schema({
 
 
 examSchema.plugin(aggregatePaginate);
-module.exports = quiz = mongoose.model('exam', examSchema);
+module.exports = Exam = mongoose.model('exam', examSchema);

@@ -3,6 +3,8 @@ module.exports = {
     API_USER: 2,
     COMPANY_ADMIN: 3,
     COMPANY_EMPLOYEE: 4,
-    AUDITOR: 5,
+    INSTITUTION_ADMIN: 5,
+    INSTITUTION_EMPLOYEE: 6,
+    AUDITOR: 7,
 
 };

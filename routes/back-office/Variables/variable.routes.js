@@ -5,6 +5,7 @@ const variableRepository = require('../../../repositories/VariableRepository');
 const validateSchema = require("../../../middlewares/validationSchema");
 const logger = require("../../../logger");
 const router = express.Router();
+const asyncHandler = require('../../../middlewares/asyncHandler');
 
 const variableCreateSchema = Joi.object({
     names: Joi.array().required(),
@@ -33,91 +34,84 @@ const variableImprintCreateSchema = Joi.object({
 
 
 /**
- * add variable to a imprint
+ * @route POST /variables/create
+ * @desc Add a new variable to an imprint
+ * @access Public
  */
-router.post('/create', validateSchema(variableImprintCreateSchema), async (req, res) => {
-    try {
-        let datas = {
+router.post(
+    '/create',
+    validateSchema(variableImprintCreateSchema),
+    asyncHandler(async (req, res) => {
+        const datas = {
             name: req.body.name,
             imprintId: req.body.imprintId,
-        }
+        };
         const variable = await variableRepository.create(datas, req.body.names, req.body.problems);
-        return res.status(200).json({message: "variable saved sucessfuly", variable})
-    } catch (error) {
-        logger.error('Error when adding variable to imprint', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-});
+        res.status(201).json({ message: 'Variable saved successfully', variable });
+    })
+);
 
 /**
- * add child to a variable
- * @param id is id parent variable
+ * @route PATCH /variables/add/child/:id
+ * @desc Add a child variable to a parent variable
+ * @param {string} id - Parent variable ID
+ * @access Public
  */
-router.patch('/add/child/:id', validateSchema(variableCreateSchema), async (req, res) => {
-    try {
-        let datas = {
+router.patch(
+    '/add/child/:id',
+    validateSchema(variableCreateSchema),
+    asyncHandler(async (req, res) => {
+        const datas = {
             imprintId: req.body.imprintId,
             parent: req.params.id,
-            isFactor: req.body.isFactor
-        }
-
+            isFactor: req.body.isFactor,
+        };
         const variable = await variableRepository.addChildrenToVariable(req.params.id, datas, req.body.definitions, req.body.names, req.body.problems);
-        // let imprint = await footprintRepository.addVariableToFootprint(req.params.id, variable._id);
-        return res.status(200).json({message: "variable saved sucessfuly", variable})
-    } catch (error) {
-        logger.error('Error when adding variable to imprint', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-})
+        res.status(201).json({ message: 'Variable saved successfully', variable });
+    })
+);
 
-router.delete('/delete/:id', async (req, res) => {
-    try {
-
+/**
+ * @route DELETE /variables/delete/:id
+ * @desc Delete a variable and its children by ID
+ * @access Public
+ */
+router.delete(
+    '/delete/:id',
+    asyncHandler(async (req, res) => {
         const variable = await variableRepository.deleteVariableAndChildren(req.params.id);
-        // let imprint = await footprintRepository.addVariableToFootprint(req.params.id, variable._id);
-        return res.status(200).json({message: "Variable deleted successfuly", variable});
-    } catch (error) {
-        logger.error('Error when deleting variable to imprint', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-})
+        res.status(200).json({ message: 'Variable deleted successfully', variable });
+    })
+);
 
-router.get('/:id', async (req, res) => {
-    try {
-
+/**
+ * @route GET /variables/:id
+ * @desc Retrieve a variable by ID
+ * @access Public
+ */
+router.get(
+    '/:id',
+    asyncHandler(async (req, res) => {
         const variable = await variableRepository.getVariableById(req.params.id);
-        // let imprint = await footprintRepository.addVariableToFootprint(req.params.id, variable._id);
-        return res.status(200).send(variable)
-    } catch (error) {
-        logger.error('Error when deleting variable to imprint', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-})
+        res.status(200).json(variable);
+    })
+);
 
-
-router.put('/update/:id', validateSchema(variableUpdateSchema), async (req, res) => {
-    try {
-        let datas = {
+/**
+ * @route PUT /variables/update/:id
+ * @desc Update a variable by ID
+ * @access Public
+ */
+router.put(
+    '/update/:id',
+    validateSchema(variableUpdateSchema),
+    asyncHandler(async (req, res) => {
+        const datas = {
             imprintId: req.body.imprintId,
-            isFactor: req.body.isFactor
-        }
+            isFactor: req.body.isFactor,
+        };
         const variable = await variableRepository.updateVariable(req.params.id, datas, req.body.definitions, req.body.names, req.body.problems);
-        // let imprint = await footprintRepository.addVariableToFootprint(req.params.id, variable._id);
-        return res.status(200).json({message: "variable saved sucessfuly", variable})
-    } catch (error) {
-        logger.error('Error when updated variable to imprint', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-})
-
+        res.status(200).json({ message: 'Variable updated successfully', variable });
+    })
+);
 module.exports = router;

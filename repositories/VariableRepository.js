@@ -6,9 +6,11 @@ const Weight = require('../models/Weight');
 const Question = require('../models/Question');
 const Proposition = require('../models/Proposition');
 const Language = require("../models/Language");
+const Option = require("../models/Option");
 const QuestionTranslation = require("../models/QuestionTranslation");
 const VariableTranslation = require("../models/VariableTranslation");
 const mongoose = require('mongoose');
+const imprintInstitutionRepository = require('../repositories/ImprintInstitutionRepository');
 
 class VariableRepository {
     async create(datas, names, problems) {
@@ -425,6 +427,81 @@ class VariableRepository {
         ]);
         return names;
     }
+
+    async getLeafVariablesGroupedByImprints(institutionId, languageIsoCode) {
+        try {
+            // Lookup to get the language ID based on the ISO code
+            const language = await Language.findOne({ isoCode: languageIsoCode });
+            if (!language) {
+                throw new Error('Language not found');
+            }
+            const languageId = language._id;
+
+            // Lookup to get the default option with value 7 and isItImportant flag true
+            const defaultOption = await Option.findOne({ value: 7, isItImportant: true });
+            if (!defaultOption) {
+                throw new Error('Default option with value 7 not found or is not marked as important');
+            }
+            const defaultOptionId = defaultOption._id;
+
+            // Retrieve all imprints
+            const imprints = await imprintInstitutionRepository.getImprintsByInstitution(institutionId);
+
+            // Process each imprint
+            const result = await Promise.all(imprints.map(async (imprint) => {
+                // Find variables for the current imprint
+                const newImprint = await Imprint.findById(imprint.imprintId);
+                const variables = await Variable.find({ imprintId: imprint.imprintId });
+
+                // Prepare an array to store processed variables
+                const processedVariables = await Promise.all(variables.map(async (variable) => {
+                    // Find the latest weight for the variable from the weights collection
+                    const weight = await Weight.findOne({ variableId: variable._id, institutionId })
+                        .sort({ createdAt: -1 })
+                        .select('optionId');
+
+                    // Determine the final weight to use
+                    const finalWeight = weight ? weight.optionId : defaultOptionId;
+
+                    // Find the variable translation based on language
+                    const translation = await VariableTranslation.findOne({
+                        variableId: variable._id,
+                        type: 'Name',
+                        languageId
+                    });
+
+                    // Prepare the processed variable object
+                    return {
+                        _id: variable._id,
+                        name: translation ? translation.label : variable.name,
+                        weight: finalWeight
+                    };
+                }));
+
+                // Return the processed imprint with variables
+                return {
+                    _id: imprint.imprintId,
+                    name: imprint.name,
+                    status: imprint.status,
+                    isAddedForAnInstitution: imprint.isAddedForAnInstitution,
+                    number: newImprint.number,
+                    variables: processedVariables
+                };
+            }));
+
+            // Sort the result by imprint number
+            result.sort((a, b) => a.number - b.number);
+
+            return result;
+        } catch (error) {
+            console.error('Error getting leaf variables grouped by imprints:', error);
+            throw error;
+        }
+    }
+
+
+
+
 
 }
 

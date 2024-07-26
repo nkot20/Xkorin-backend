@@ -1,14 +1,16 @@
-# Utiliser l'image Node.js officielle
-FROM node:14
+FROM node:18
 
-WORKDIR /app
+WORKDIR /workspace
 
-COPY package*.json ./
-
-RUN npm install
-
+COPY package.json package-lock.json ./
 COPY . .
 
-EXPOSE 4005
+# Installer les outils Node.js globaux
+RUN npm install -g nodemon
 
-CMD ["node", "./bin/www"]
+# Installer les dépendances de l'application
+RUN npm install --force
+RUN npm install bcryptjs
+
+EXPOSE 4005
+CMD ["nodemon", "bin/www"]

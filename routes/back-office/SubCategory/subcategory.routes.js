@@ -6,49 +6,59 @@ const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
 const validateSchema = require("../../../middlewares/validationSchema");
 const subCategoryImprintRepository = require("../../../repositories/SubCategoryImprintRepository");
+const asyncHandler = require('../../../middlewares/asyncHandler');
 
-
-router.post('/', async (req, res) => {
-    try {
+/**
+ * @route POST /subcategories
+ * @desc Create a new subcategory and its translation
+ * @access Public
+ */
+router.post(
+    '/',
+    asyncHandler(async (req, res) => {
         const response = await subCategoryRepository.create(req.body.subcategory, req.body.translation);
-        res.status(201).send(response);
-    } catch (error) {
-        logger.error("Error when creating the subcategory and her translation:", error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+        res.status(201).json(response);
+    })
+);
 
-//get all
-router.get('/', async (req, res) => {
-    try {
+/**
+ * @route GET /subcategories
+ * @desc Retrieve all subcategories and their translations
+ * @access Public
+ */
+router.get(
+    '/',
+    asyncHandler(async (req, res) => {
         const response = await subCategoryRepository.getAll();
-        res.status(201).send(response);
-    } catch (error) {
-        logger.error("Error when getting categories and her translations", error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+        res.status(200).json(response);
+    })
+);
 
-//get all by language isoCode
-router.get('/:categoryId/:isoCode', async (req, res) => {
-    try {
+/**
+ * @route GET /subcategories/:categoryId/:isoCode
+ * @desc Retrieve all subcategories by language ISO code and category ID
+ * @access Public
+ */
+router.get(
+    '/:categoryId/:isoCode',
+    asyncHandler(async (req, res) => {
         const response = await subCategoryRepository.getAllByLangageAndCategory(req.params.isoCode, req.params.categoryId);
-        res.status(201).send(response);
-    } catch (error) {
-        logger.error("Error when getting categories by language isoCode and her translations", error);
-        res.status(500).json({ message: error.message });
-    }
-});
+        res.status(200).json(response);
+    })
+);
 
-// add imprint to subcategory
-router.post('/imprint/:subcategoryId/', async (req, res) => {
-    try {
-       const response = await subCategoryImprintRepository.create(req.body.imprintId, req.params.subcategoryId);
-        res.status(201).send(response);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-})
+/**
+ * @route POST /subcategories/imprint/:subcategoryId
+ * @desc Add an imprint to a subcategory
+ * @access Public
+ */
+router.post(
+    '/imprint/:subcategoryId',
+    asyncHandler(async (req, res) => {
+        const response = await subCategoryImprintRepository.create(req.body.imprintId, req.params.subcategoryId);
+        res.status(201).json(response);
+    })
+);
 
 
 

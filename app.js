@@ -16,7 +16,7 @@ const formData = require('express-form-data');
 const mongoClient = require('./ClientMongo/MongoClientTransaction');
 const indexRouter = require('./routes/')
 
-const { errorHandler, asyncErrorHandler, notFoundHandler } = require('./middlewares/errorHandlers');
+const errorHandler = require('./middlewares/errorHandler');
 
 
 // Debugging mongoose queries
@@ -176,8 +176,6 @@ app.use('/xkorin/api/v1', indexRouter);
 
 // catch 404 and forward to error handler
 app.use(errorHandler);
-app.use(notFoundHandler);
-app.use(asyncErrorHandler)
 
 // Demonstrate the readyState and on event emitters
 // console.log(mongoose.connection.readyState); //logs 0

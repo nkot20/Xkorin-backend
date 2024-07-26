@@ -2,7 +2,6 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Imprint = require('../models/Imprint');
 const Variable = require('../models/Variable');
-const Factor = require('../models/Factor');
 const Question = require('../models/Question');
 const Option = require('../models/Option');
 const Language = require("../models/Language");
@@ -12,11 +11,16 @@ const PropositionTranslation = require("../models/PropositionTranslation");
 const Answer = require("../models/Answer");
 const Exam = require("../models/Exam");
 const Person = require("../models/Person");
+const examRepository = require("../repositories/ExamRepository");
 const subcategoryImprintRepository = require("../repositories/SubCategoryImprintRepository");
 const {ObjectId} = require("mongodb");
 const Helper = require("../common/Helper");
 const fs = require("fs");
-
+const { setCache, getCache, clearCache } = require('../common/cache');
+const Examen = require("../models/Exam");
+const Institution = require("../models/Institution");
+const Company = require("../models/Company");
+const ExamState = require('../models/ExamState');
 
 
 
@@ -30,16 +34,21 @@ class ImprintRepository {
         }
     }
 
-    // Fonction pour récupérer les derniers fils sans fils pour chaque variable sans père et leurs traductions
+    /**
+     * Fonction pour récupérer les derniers fils sans fils pour chaque variable sans père et leurs traductions
+     * @param orphanVariables
+     * @param languageId
+     * @returns {Promise<Awaited<unknown>[]>}
+     */
     async getLastChildrenForOrphans(orphanVariables, languageId) {
         try {
             // Fonction récursive pour trouver les derniers fils sans fils
             // Fonction récursive pour trouver les derniers fils sans fils
-            const findLastChildrenWithoutChildren = async (variableId) => {
-                const children = await Variable.find({ parent: variableId });
+            const findLastChildrenWithoutChildren = async (variable) => {
+                const children = await Variable.find({ parent: variable._id });
                 if (children.length === 0) {
-                    const variable = await Variable.findById(variableId);
-                    const translatedName = await getVariableTranslation(variableId, languageId);
+                    console.log("I want to see variable ", variable);
+                    const translatedName = await getVariableTranslation(variable, languageId);
                     return [{
                         _id: variable._id,
                         name: translatedName,
@@ -53,18 +62,20 @@ class ImprintRepository {
             };
 
             // Fonction pour récupérer la traduction d'une variable
-            const getVariableTranslation = async (variableId, languageId) => {
+            const getVariableTranslation = async (variable, languageId) => {
+                console.log("I want to see the second variable ", variable);
                 const translation = await VariableTranslation.findOne({
-                    variableId,
+                    variableId: variable._id,
                     languageId
                 });
-                return translation ? translation.label : null;
+
+                return translation ? translation.label : variable.name;
             };
 
             // Utiliser `Promise.all` pour exécuter les recherches en parallèle pour chaque variable sans père
             const responsePromises = orphanVariables.map(async (variable) => {
                 const lastChildren = await findLastChildrenWithoutChildren(variable._id);
-                const translatedName = await getVariableTranslation(variable._id, languageId);
+                const translatedName = await getVariableTranslation(variable, languageId);
 
                 return {
                     _id: variable._id,
@@ -81,6 +92,13 @@ class ImprintRepository {
         }
     }
 
+    /**
+     *
+     * @param subcategoryId
+     * @param isoCode (language)
+     * @param profilId
+     * @returns {Promise<*[]>}
+     */
     async getVariablesForImprints(subcategoryId, isoCode, profilId) {
         try {
             // Trouver les imprintIds d'une sous catégorie
@@ -138,7 +156,6 @@ class ImprintRepository {
 
                 // Utiliser `Promise.all` pour traiter chaque orphelin en parallèle afin de trouver les variables fueilles de chaque variable racine
                 const updatedOrphanVariables = await Promise.all(variablesWithFirstChild.map(async (variable) => {
-                    console.log(variable)
                     // Utiliser `Promise.all` pour traiter chaque `lastChildren` en parallèle
                     const updatedLastChildren = await Promise.all(variable.children.map(async (child) => {
                         console.log(child)
@@ -178,6 +195,195 @@ class ImprintRepository {
     }
 
 
+    /**
+     *
+     * @param subcategoryId
+     * @param isoCode (language)
+     * @param profilId
+     * @param examId
+     * @returns {Promise<*[]>}
+     */
+    async getRemainingVariablesForImprints(subcategoryId, isoCode, profilId, examId) {
+        try {
+            // Find imprint IDs for the given subcategory
+            let imprintIds = await subcategoryImprintRepository.getImprintIdBySubcategoryId(subcategoryId);
+
+            // Find the language ID for the provided ISO code
+            const language = await Language.findOne({ isoCode });
+            if (!language) {
+                throw new Error('Language not found');
+            }
+            const languageId = language._id;
+
+            // Fetch imprints based on the retrieved IDs and sort them
+            const imprints = await Imprint.find({ _id: { $in: imprintIds } }).sort({ number: 1 });
+
+            let remainingVariablesWithImprints = [];
+
+            await Promise.all(imprints.map(async (imprint) => {
+                // Retrieve variables without a parent for the specified imprints
+                const variables = await Variable.find({
+                    imprintId: imprint._id,
+                    parent: null
+                });
+
+                // Container for variables and their children
+                const variablesWithFirstChild = [];
+                await Promise.all(variables.map(async (variable) => {
+                    const firstsChild = await Variable.find({ parent: variable._id });
+                    const orphanVariables = await this.getLastChildrenForOrphans(firstsChild, languageId);
+
+                    variablesWithFirstChild.push({
+                        variable,
+                        children: orphanVariables
+                    });
+                }));
+
+
+                // Helper function to check if a variable has already been evaluated
+                const isVariableEvaluated = async (variableId) => {
+                    const examState = await ExamState.findOne({
+                        variableId,
+                        examId,
+                    });
+                    return !!examState; // Return true if evaluated, false otherwise
+                };
+
+                // Function to get translated questions for a variable
+                const getTranslatedQuestionForVariable = async (variableId) => {
+                    const questions = await Question.find({ variableId, profilId });
+                    let questionsTranslation = [];
+                    await Promise.all(questions.map(async (question) => {
+                        const questionTranslation = await QuestionTranslation.findOne({
+                            questionId: question._id,
+                            languageId: languageId
+                        });
+                        if (questionTranslation) {
+                            question.label = questionTranslation.label;
+                            questionsTranslation.push(question);
+                        }
+                    }));
+
+                    return questionsTranslation;
+                };
+
+                // Process each variable and its children to check for remaining variables
+                const updatedOrphanVariables = await Promise.all(variablesWithFirstChild.map(async (variable) => {
+                    const updatedChildren = await Promise.all(variable.children.map(async (child) => {
+                        // Check if the current child variable has been evaluated
+                        const isEvaluated = await isVariableEvaluated(child._id);
+
+                        if (!isEvaluated) {
+                            const lastChildren = await Promise.all(child.lastChildren.map(async (leaf) => {
+                                const leafEvaluated = await isVariableEvaluated(leaf._id);
+
+                                if (!leafEvaluated) {
+                                    leaf.questions = await getTranslatedQuestionForVariable(leaf._id);
+                                    return leaf;
+                                } else {
+                                    return null; // Skip this leaf if it has been evaluated
+                                }
+                            }));
+
+                            const remainingLastChildren = lastChildren.filter(leaf => leaf !== null);
+
+                            if (remainingLastChildren.length > 0) {
+                                child.lastChildren = remainingLastChildren;
+                                return child;
+                            } else {
+                                return null; // Skip this child if it has no remaining last children
+                            }
+                        } else {
+                            return null; // Skip this child if it has been evaluated
+                        }
+                    }));
+
+                    // Filter out evaluated children
+                    const remainingChildren = updatedChildren.filter(child => child !== null);
+
+                    // Return the variable if it still has remaining children
+                    if (remainingChildren.length > 0) {
+                        variable.children = remainingChildren;
+                        return variable;
+                    } else {
+                        return null; // Skip this variable if it has no remaining children
+                    }
+                }));
+
+                // Filter out variables with no remaining children
+                const nonEmptyVariables = updatedOrphanVariables.filter(variable => variable !== null);
+
+                if (nonEmptyVariables.length > 0) {
+                    remainingVariablesWithImprints.push({
+                        imprint,
+                        variables: nonEmptyVariables.map(v => ({
+                            variable: v.variable,
+                            children: v.children
+                        })),
+                    });
+                }
+            }));
+
+            return remainingVariablesWithImprints;
+        } catch (error) {
+            console.error(error);
+            throw new Error('An error occurred while fetching the remaining variables.');
+        }
+    }
+
+
+    /**
+     * check if exam has been completed
+     * @param subcategoryId
+     * @param examId
+     * @returns {Promise<*[]>}
+     */
+    async isExamComplete(subcategoryId, examId) {
+        try {
+            // Obtenir toutes les imprintIds d'une sous-catégorie
+            let imprintIds = await subcategoryImprintRepository.getImprintIdBySubcategoryId(subcategoryId);
+
+            // Récupérer les empreintes
+            const imprints = await Imprint.find({ _id: { $in: imprintIds } }).sort({ number: 1 });
+
+            let allVariableIds = [];
+
+            await Promise.all(imprints.map(async (imprint) => {
+                // Récupérer les variables sans parent pour les empreintes spécifiées
+                const variables = await Variable.find({
+                    imprintId: imprint._id,
+                    parent: null
+                });
+
+                await Promise.all(variables.map(async (variable) => {
+                    const firstsChild = await Variable.find({ parent: ObjectId(variable._id) });
+                    const orphanVariables = await this.getLastChildrenForOrphans(firstsChild, languageId);
+
+                    orphanVariables.forEach(child => {
+                        allVariableIds.push(child._id);
+                    });
+                }));
+            }));
+
+            // Obtenir les variables déjà répondues
+            const answeredVariableIds = await ExamState.find({ examId }).distinct('variableId');
+
+            // Vérifier si toutes les variables attendues sont présentes dans answeredVariableIds
+            return allVariableIds.every(variableId => answeredVariableIds.includes(variableId.toString()));
+
+        } catch (error) {
+            console.error(error);
+            throw new Error('An error occurred while checking if the exam is complete.');
+        }
+    }
+
+
+    /**
+     *
+     * @param footprintId
+     * @param variableId
+     * @returns {Promise<any>}
+     */
     async addVariableToFootprint(footprintId, variableId) {
 
         try {
@@ -222,21 +428,24 @@ class ImprintRepository {
     }
 
 
-    // Fonction pour obtenir l'arbre de variables pour chaque empreinte
+    /**
+     * Fonction pour obtenir l'arbre de variables pour chaque empreinte
+     * @returns {Promise<Awaited<unknown>[]>}
+     */
     async getFootprintVariableTree() {
         try {
             // Récupérer toutes les empreintes
             const imprints = await Imprint.find({});
 
             // Utiliser Promise.all pour exécuter les requêtes en parallèle
-            const imprintVariableTree = await Promise.all(imprints.map(async (fp) => {
+            return await Promise.all(imprints.map(async (fp) => {
                 // Récupérer la racine de l'arbre de variables pour cette empreinte
-                const rootVariables = await Variable.find({ imprintId: fp._id, parent: null });
+                const rootVariables = await Variable.find({imprintId: fp._id, parent: null});
 
                 // Fonction récursive pour construire l'arbre de variables
                 let heightTree = 0;
                 const buildVariableTree = async (parentId, imprintId) => {
-                    const children = await Variable.find({ imprintId: fp._id, parent: parentId });
+                    const children = await Variable.find({imprintId: fp._id, parent: parentId});
 
                     if (children.length === 0) {
                         return [];
@@ -248,10 +457,10 @@ class ImprintRepository {
                         const subtree = await buildVariableTree(child._id, imprintId);
 
                         if (subtree.length === 0 && child.isFactor) {
-                            tree.push({ text: child.name, value: child._id+'-'+fp._id+'-leaf', children: subtree });
+                            tree.push({text: child.name, value: child._id + '-' + fp._id + '-leaf', children: subtree});
 
                         } else
-                            tree.push({ text: child.name, value: child._id+'-'+fp._id, children: subtree });
+                            tree.push({text: child.name, value: child._id + '-' + fp._id, children: subtree});
                     }));
                     return tree;
                 };
@@ -261,16 +470,19 @@ class ImprintRepository {
                 const tree = await buildVariableTree(null);
 
                 // Retourner l'objet contenant l'empreinte et son arbre de variables
-                return {text: fp.name, value: fp._id+'-'+'imprint', children: tree};
+                return {text: fp.name, value: fp._id + '-' + 'imprint', children: tree};
             }));
-
-            return imprintVariableTree;
         } catch (error) {
             console.error("Erreur lors de la récupération de l'arbre de variables:", error);
             throw error;
         }
     }
 
+    /**
+     *
+     * @param examId
+     * @returns {Promise<*[]>}
+     */
     async buildVariableTree(examId){
         try {
            const imprints = await Imprint.find();
@@ -286,6 +498,12 @@ class ImprintRepository {
         }
     }
 
+    /**
+     *
+     * @param imprintId
+     * @param examId
+     * @returns {Promise<{isAvailable: boolean, variables: (*&{children: *})[]}>}
+     */
     async buildVariableTreeForImprint(imprintId, examId) {
         try {
             // Étape 1 : Récupérer toutes les variables associées à l'empreinte
@@ -367,84 +585,132 @@ class ImprintRepository {
         }
     }
 
-    async calulateImprintValue(imprintId, examId) {
-        try {
+    /**
+     * calculate imprint for each exam
+     * @param imprintId
+     * @param examId
+     * @returns {Promise<unknown>}
+     */
+     async calulateImprintValue(imprintId, examId) {
+        //await clearCache();
+        return new Promise(async (resolve, reject) => {
+            const cacheKey = `${examId}_${imprintId}`;
 
-            // Étape 1 : Récupérer toutes les variables associées à l'empreinte
-            const variables = await Variable.find({ imprintId }).lean();
-            const variableMap = {};
-            variables.forEach(variable => {
-                variableMap[variable._id] = {
-                    ...variable,
-                    children: [],
-                    weight: variable.dafaultWeight || 0,
-                    value: 0
-                };
-            });
+            // Vérifier le cache
+            const cachedData = await getCache(cacheKey);
+            if (cachedData) {
+                return resolve(cachedData);
+            } else {
+                // Si les données ne sont pas dans le cache, les calculer
+                // Étape 1 : Récupérer toutes les variables associées à l'empreinte
+                const variables = await Variable.find({ imprintId }).lean();
+                const variableMap = {};
+                variables.forEach(variable => {
+                    variableMap[variable._id] = {
+                        ...variable,
+                        children: [],
+                        weight: variable.dafaultWeight || 0,
+                        value: 0
+                    };
+                });
 
 
-            // Étape 3 : récupérer les poids des variables feuilles
-            const leafVariables = variables.filter(variable => variable.children.length === 0);
-
-            await Promise.all(leafVariables.map(async variable => {
-                const questions = await Question.find({ variableId: variable._id, weighting: true }).lean();
-                const weights = await Promise.all(questions.map(async question => {
-                    if (question.weighting) {
+                // Étape 3 : récupérer les poids des variables feuilles
+                const leafVariables = variables.filter(variable => variable.children.length === 0);
+                await Promise.all(leafVariables.map(async variable => {
+                    const questions = await Question.find({ variableId: variable._id}).lean();
+                    await Promise.all(questions.map(async question => {
                         const answer = await Answer.findOne({ questionId: question._id, examId }).lean();
                         if (answer) {
                             const option = await Option.findById(answer.optionId).lean();
-                            return option.value;
-                        } else {
-                            return 0;
+
+                            if (question.weighting) {
+                                variable.weight = option.value;
+                            } else {
+                                variable.value = option.value;
+                            }
                         }
-                    }
+                    }));
                 }));
-                variable.weight = weights[0];
-            }));
 
 
-            // Étape 5 : Récupérer les valeurs des variables feuilles
-            await Promise.all(leafVariables.map(async variable => {
-                const questions = await Question.find({ variableId: variable._id, weighting: false }).lean();
-                const values = await Promise.all(questions.map(async question => {
-                    if (!question.weighting) {
-                        const answer = await Answer.findOne({ questionId: question._id, examId }).lean();
-                        if (answer) {
-                            const option = await Option.findById(answer.optionId).lean();
-                            return option.value;
-                        } else {
-                            return 0;
-                        }
-                    }
-                }));
-                variable.value = values[0];
-            }));
+                /* // Étape 5 : Récupérer les valeurs des variables feuilles
+                 await Promise.all(leafVariables.map(async variable => {
+                     const questions = await Question.find({ variableId: variable._id, weighting: false }).lean();
+                     const values = await Promise.all(questions.map(async question => {
+                         if (!question.weighting) {
+                             const answer = await Answer.findOne({ questionId: question._id, examId }).lean();
+                             if (answer) {
+                                 const option = await Option.findById(answer.optionId).lean();
+                                 return option.value;
+                             } else {
+                                 return 0;
+                             }
+                         }
+                     }));
+                     variable.value = values[0];
+                 }));
 
-            const totalWeight = leafVariables.reduce((sum, variable) => sum + variable.weight, 0);
 
-            // Retourner l'arbre des variables
-             return Math.ceil((leafVariables.reduce((sum, variable) => sum + (variable.weight / totalWeight) * variable.value, 0) / 7) * 1216);
-        } catch (error) {
-            console.log(error);
-            throw error;
-        }
+*/
+
+                const totalWeight = leafVariables.reduce((sum, variable) => sum + variable.weight, 0);
+
+                // Retourner l'arbre des variables
+                let score = Math.ceil((leafVariables.reduce((sum, variable) => sum + (variable.weight / totalWeight) * variable.value, 0) / 7) * 1216);
+                if (isNaN(score))
+                    score = 0;
+
+                // Stocker les données calculées dans le cache
+                await setCache(cacheKey, score);
+                const cachedData2 = await getCache(cacheKey);
+                console.log("cache datas 2 ------------------------------------------------------------------------------------------- ", cacheKey, cachedData2, score);
+                return resolve(score);
+            }
+        });
+
     }
 
+    /**
+     * get confidence index to the exam
+     * @param examId
+     * @returns {Promise<unknown>}
+     */
     async getConfidenceIndex(examId){
         try {
-            const imprints = await Imprint.find();
-            let response = [];
+            return new Promise(async (resolve, reject) => {
+                const cacheKey = `${examId}_cci`;
 
-            await Promise.all(imprints.map(async (imprint) => {
-                const value = await this.calulateImprintValue(imprint.id, examId);
-                response.push(value);
-            }));
-            return response.reduce((sum, value) => sum + value, 0);
+                // Vérifier le cache
+                const cachedData = await getCache(cacheKey);
+                if (cachedData) {
+                    return resolve(cachedData);
+                } else {
+                    // Si les données ne sont pas dans le cache, les calculer
+                    const imprints = await Imprint.find();
+                    let response = [];
+
+                    await Promise.all(imprints.map(async (imprint) => {
+                        this.calulateImprintValue(imprint.id, examId).then(value => {
+                            response.push(value);
+                        });
+
+                    }));
+                    const cci = response.reduce((sum, value) => sum + value, 0);
+                    console.log("CCI ------------------------------------------------------------------", cci, examId)
+                    resolve(cci);
+                }
+            });
+
         } catch (error) {
             throw error;
         }
     }
 
+    /**
+     *
+     * @returns {Promise<{averageValue: number, minValue: number, maxValue: number, imprint: *}[]>}
+     */
     async calculateImprintStatisticsForAllExams() {
         try {
             // Étape 1 : Récupérer tous les examens
@@ -458,7 +724,6 @@ class ImprintRepository {
                 else
                     return 1;
             });
-            console.log(imprints)
             // Dictionnaire pour stocker les valeurs des empreintes pour chaque examen
             const imprintValuesMap = {};
 
@@ -502,9 +767,20 @@ class ImprintRepository {
         }
     }
 
+    /**
+     *
+     * @param examId
+     * @returns {Promise<*[]>}
+     */
     async getValueToEachImprint(examId){
         try {
-            const imprints = await Imprint.find();
+            let imprints = await Imprint.find();
+            imprints = imprints.sort((a, b) => {
+                if (a.number > b.number)
+                    return -1;
+                else
+                    return 1;
+            })
             let response = [];
 
             await Promise.all(imprints.map(async (imprint) => {
@@ -533,9 +809,7 @@ class ImprintRepository {
                         mmlogo: this.imageFileToBase64('./public/logos/mm_logo.jpg'),
                         signature1: this.imageFileToBase64('./public/logos/signaturebossou.PNG'),
                         signature2: this.imageFileToBase64('./public/logos/signaturemondo.PNG'),
-                    }, examId, imprint.name).then(value => {
-
-                    })
+                    }, examId, imprint.name)
 
                     response.push(value);
                 });
@@ -550,6 +824,11 @@ class ImprintRepository {
         }
     }
 
+    /**
+     *
+     * @param examId
+     * @returns {Promise<this is *[]>}
+     */
     async getAvailableExam(examId){
         try {
             const imprints = await Imprint.find();
@@ -564,6 +843,47 @@ class ImprintRepository {
             throw error;
         }
     }
+
+    /**
+     * Get index and imprints for all exam that we will allow to have graphic evolution
+     * @param institutionId
+     * @param personId
+     * @returns {Promise<{examDetails: {exam: Query<Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, unknown, any>, institution: Query<Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, unknown, any>, person: Query<Document<unknown, any, InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>>> & Omit<InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>> & {_id: Types.ObjectId}, never> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TVirtuals"> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TInstanceMethods">, Document<unknown, any, InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>>> & Omit<InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>> & {_id: Types.ObjectId}, never> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TVirtuals"> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TInstanceMethods">, ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TQueryHelpers">, InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>>> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TQueryHelpers">, company: Query<Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, unknown, any>}, imprintValue: *[], evolution: {indexValues: *[], imprintsData: *[]}, variableTree: *[]}>}
+     */
+    async getDatasForEachExam(institutionId, personId) {
+        try {
+            const exams = await examRepository.getExamsByPersonAndInstitution(personId, institutionId);
+            const evolution = [];
+            const indexValues = [];
+            let imprintsData = [];
+            await Promise.all(exams.map(async (value) => {
+                let imprints = await this.getValueToEachImprint(value._id);
+                const cii = imprints.reduce((sum, value) => sum + value, 0);
+                indexValues.push({date: this.formatDate(value.createdAt), value: cii})
+                evolution.push({imprints, date: this.formatDate(value.createdAt)})
+            }));
+            let i = 0;
+            evolution.forEach(item => {
+                item.imprints.forEach((imprint, index) => {
+                    if (!imprintsData[index]) {
+                        imprintsData[index] = [];
+                    }
+                    imprintsData[index].push({date: item.date, value: imprint});
+                });
+
+
+            })
+
+            const latestExam = await examRepository.getLatestExamByPersonAndInstitution(personId, institutionId);
+            const examDetails = await examRepository.getExamById(latestExam._id);
+            const imprintValue = await this.getValueToEachImprint(latestExam._id);
+            const variableTree = await this.buildVariableTree(latestExam._id);
+            return {examDetails, evolution: {indexValues, imprintsData}, imprintValue, variableTree};
+        } catch (error) {
+            throw error;
+        }
+    }
+
 
     formatDate(date) {
         const day = String(date.getDate()).padStart(2, '0');
@@ -596,3 +916,5 @@ class ImprintRepository {
 
 const imprintRepository = new ImprintRepository();
 module.exports = imprintRepository;
+
+

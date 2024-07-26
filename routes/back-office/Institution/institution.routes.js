@@ -3,29 +3,24 @@ const express = require('express');
 const router = express.Router();
 const institutionRepository = require('../../../repositories/InstitutionRepository');
 const logger = require("../../../logger");
+const asyncHandler = require('../../../middlewares/asyncHandler');
 
-router.post('/create', async (req, res) => {
-    try {
+// Création d'une nouvelle institution
+router.post(
+    '/create',
+    asyncHandler(async (req, res) => {
         const response = await institutionRepository.create(req.body);
-        return res.status(200).json({message: "institution saved sucessfuly", response})
-    } catch (error) {
-        logger.error('Error when adding institution', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-});
+        res.status(200).json({ message: 'Institution saved successfully', response });
+    })
+);
 
-router.get('/', async (req, res) => {
-    try {
-        const response = await institutionRepository.getAll()
-        return res.status(200).send(response);
-    } catch (error) {
-        logger.error('Error when getting institution', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-})
+// Récupération de toutes les institutions
+router.get(
+    '/',
+    asyncHandler(async (req, res) => {
+        const response = await institutionRepository.getAll();
+        res.status(200).send(response);
+    })
+);
 
 module.exports = router;

@@ -6,47 +6,40 @@ const validateSchema = require('../../../middlewares/validationSchema');
 const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
+const asyncHandler = require('../../../middlewares/asyncHandler');
 const footprintCreateSchema = Joi.object({
     name: Joi.string().required(),
     color: Joi.string().required(),
 });
 
 
-//create imprint
-router.post('/', validateSchema(footprintCreateSchema), async (req, res)  => {
-    try {
+// Création d'un nouvel imprint
+router.post(
+    '/',
+    validateSchema(footprintCreateSchema),
+    asyncHandler(async (req, res) => {
         const footprint = await imprintRepository.createFootprint(req.body);
-        return res.status(200).json({message: "imprint saved sucessfuly", footprint})
-    } catch (error) {
-        logger.error('Error when creating imprint', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-});
+        res.status(200).json({ message: 'Imprint saved successfully', footprint });
+    })
+);
 
-router.get('/', async (req, res) => {
-    try {
+// Récupération de tous les imprints
+router.get(
+    '/',
+    asyncHandler(async (req, res) => {
         const response = await imprintRepository.getAll();
-        return res.status(200).send(response)
-    } catch (error) {
-        logger.error('Error when getting imprint', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-})
+        res.status(200).send(response);
+    })
+);
 
-router.get('/tree', async (req, res) => {
-    try {
+// Récupération de l'arbre de variables d'imprint
+router.get(
+    '/tree',
+    asyncHandler(async (req, res) => {
         const response = await imprintRepository.getFootprintVariableTree();
-        return res.status(200).send(response)
-    } catch (error) {
-        logger.error('Error when getting imprint', { error: error });
-        return res.status(400).json({
-            error: error.message,
-        });
-    }
-})
+        res.status(200).send(response);
+    })
+);
+
 
 module.exports = router;

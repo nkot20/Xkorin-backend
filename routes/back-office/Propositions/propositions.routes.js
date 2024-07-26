@@ -5,36 +5,45 @@ const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
 const validateSchema = require("../../../middlewares/validationSchema");
+const asyncHandler = require('../../../middlewares/asyncHandler');
 
-
-router.post('/', async (req, res) => {
-    try {
+/**
+ * @route POST /propositions
+ * @desc Create a new proposition along with its translations
+ * @access Public
+ */
+router.post(
+    '/',
+    asyncHandler(async (req, res) => {
         const response = await propositionRepository.create(req.body.proposition, req.body.translation);
-        res.status(201).send(response);
-    } catch (error) {
-        logger.error("Error when creating the proposition and its translations:", error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+        res.status(201).json(response);
+    })
+);
 
-router.get('/:questionId', async (req, res) => {
-    try {
+/**
+ * @route GET /propositions/:questionId
+ * @desc Retrieve propositions by question ID
+ * @access Public
+ */
+router.get(
+    '/:questionId',
+    asyncHandler(async (req, res) => {
         const response = await propositionRepository.findPropositionByQuestionId(req.params.questionId);
-        res.status(201).send(response);
-    } catch (error) {
-        logger.error("Error when getting the proposition and its translations for question:", error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-});
+        res.status(200).json(response);
+    })
+);
 
-router.delete('/:id', async (req, res) => {
-    try {
+/**
+ * @route DELETE /propositions/:id
+ * @desc Delete a proposition and its translations by ID
+ * @access Public
+ */
+router.delete(
+    '/:id',
+    asyncHandler(async (req, res) => {
         const response = await propositionRepository.deteleProposition(req.params.id);
-        res.status(200).json({message: 'Option deleted', response});
-    } catch (error) {
-        logger.error("Error when deleting the proposition and its translations for question:", error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-})
+        res.status(200).json({ message: 'Proposition deleted', response });
+    })
+);
 
 module.exports = router;

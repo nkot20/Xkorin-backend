@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const examRouter = require('./exam.routes');
+const authMiddleware = require('../../../middlewares/authenticate.middleware');
 
-router.use('/', examRouter);
+router.use('/', authMiddleware.authenticate, examRouter);
 
 module.exports = router

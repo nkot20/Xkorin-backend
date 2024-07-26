@@ -2,6 +2,8 @@ require('dotenv').config();
 const Answer = require('../models/Answer');
 const Option = require('../models/Option');
 const Exam = require('../models/Exam');
+const ExamState = require('../models/ExamState');
+const Question = require('../models/Question');
 const {ObjectId} = require("mongodb");
 const Helper = require('../common/Helper');
 
@@ -10,43 +12,48 @@ class AnswerRepository {
 
     async create(answers) {
         try {
-            const exam = await Exam.findById(answers[0].examId);
-            if (!exam) {
-                throw new Error('Exam doesn\'t exist !');
+            // Ensure the answers array is not empty and contains a valid examId
+            if (answers.length === 0 || !answers[0].examId) {
+                throw new Error('Invalid answers array!');
             }
 
-            /*let quizzInfos = await Quiz.findById(quizId);
-            let points = await calculPointRepository.calculImprintUser(resultUsager._id, quiz.companyId, '660ef07d12bd44b5e6ae8085',quizId);
-            Helper.generateQrCode({
-                date: this.formatDate(new Date()),
-                nom: resultUsager.civilite +' '+ resultUsager.first_name+' '+resultUsager.last_name,
-                formation: quizzInfos.title,
-                points: points
-            }, resultUsager._id, quizId);
-            await Helper.exportWebsiteAsPdf({
-                date: this.formatDate(new Date()),
-                dateExpiration: this.formatDate(this.addYearsToDate(new Date(),1)),
-                lastname: resultUsager.civilite + ' '+resultUsager.last_name,
-                firstname: resultUsager.first_name,
-                formation: quizzInfos.title,
-                points: Math.floor(points),
-                qrcode: process.env.HOSTNAME+'/qrcode/'+quizId+'_'+resultUsager._id+'.png',
-                logoentetegauche: process.env.HOSTNAME+'/logos/accelerate-africa.jpg',
-                logoentetedroit: process.env.HOSTNAME+'/logos/wellbin.PNG',
-                diamantlogo: process.env.HOSTNAME+'/logos/diamant_logo.jpg',
-                humanbetlogo: process.env.HOSTNAME+'/logos/humanbet_logo.jpg',
-                mmlogo: process.env.HOSTNAME+'/logos/mm_logo.jpg',
-                signature1: process.env.HOSTNAME+'/logos/signaturebossou.PNG',
-                signature2: process.env.HOSTNAME+'/logos/signaturemondo.PNG',
-            }, quizId, resultUsager._id)*/
+            // Verify the existence of the exam
+            const exam = await Exam.findById(answers[0].examId);
+            if (!exam) {
+                throw new Error('Exam doesn\'t exist!');
+            }
+
+            // Process each answer to update the exam state
+            await Promise.all(answers.map(async (answer) => {
+                // Find the question to obtain the variableId
+                const question = await Question.findById(answer.questionId);
+                if (!question) {
+                    throw new Error(`Question with ID ${answer.questionId} not found!`);
+                }
+
+                // Check if the exam state for this variable already exists
+                const existingExamState = await ExamState.findOne({
+                    variableId: question.variableId,
+                    examId: answer.examId,
+                });
+
+                // If it doesn't exist, create a new exam state
+                if (!existingExamState) {
+                    const newExamState = new ExamState({
+                        variableId: question.variableId,
+                        examId: answer.examId,
+                    });
+                    await newExamState.save();
+                }
+            }));
+
+            // Insert all the answers
             return await Answer.insertMany(answers);
         } catch (error) {
-            console.error(error)
+            console.error('Error creating answers:', error);
             throw error;
         }
-
     }
-
      formatDate(date) {
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0');

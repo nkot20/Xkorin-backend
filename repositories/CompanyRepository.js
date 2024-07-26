@@ -2,6 +2,8 @@ require('dotenv').config();
 
 const Company = require('../models/Company');
 const User = require('../models/User');
+const Exam = require('../models/Exam');
+const Person = require('../models/Person');
 
 class CompanyRepository {
   // List companies
@@ -54,24 +56,6 @@ class CompanyRepository {
     }
   }
 
-  async getAllActiveCompanies() {
-    try {
-      return await Company.find({ status: 'Active' });
-    } catch (error) {
-      console.log('get all active companies', error);
-      throw error;
-    }
-  }
-
-  async getAllActiveCompanies() {
-    try {
-      return await Company.find({ status: 'Active' });
-    } catch (error) {
-      console.log('get all active companies', error);
-      throw error;
-    }
-  }
-
   // Get Company
   async getCompany(id) {
     try {
@@ -107,65 +91,6 @@ class CompanyRepository {
       return company;
     } catch (error) {
       console.log('Get Company by Id error', error);
-      throw error;
-    }
-  }
-
-  async getCompanyUsers(id, options) {
-    try {
-      const regex = new RegExp(options.search, 'i');
-      const company = await Company.findById(id);
-
-      if (!company) {
-        return null;
-      }
-
-      const aggregate = Company.aggregate([
-        {
-          $match: {
-            business_code: company.business_code,
-            $and: [
-              {
-                $or: [
-                  { last_name: regex },
-                  { first_name: regex },
-                  { email: regex },
-                  { phoneNumber: regex },
-                ],
-              },
-            ],
-          },
-        },
-        {
-          $sort: {
-            last_name: 1,
-          },
-        },
-      ]);
-
-      return await User.aggregatePaginate(aggregate, options);
-    } catch (error) {
-      console.log('Get Company by Id error', error);
-      throw error;
-    }
-  }
-
-  // Get Company by business Code
-  async getCompanyByCode(businessCode) {
-    try {
-      return await Company.findOne({ business_code: businessCode });
-    } catch (error) {
-      console.error(`Error finding company : ${error}`);
-      throw error;
-    }
-  }
-
-  async getAvailableCompaniesForTempUsers() {
-    try {
-      return await Company.find({ availableForTempUsers: true })
-        .select('name _id business_code');
-    } catch (error) {
-      console.error('Error finding companies available for temp users');
       throw error;
     }
   }
@@ -206,6 +131,97 @@ class CompanyRepository {
       throw error;
     }
   }
+
+  async getCompaniesAndAdminsByInstitutionId(institutionId, page, limit, sort, order, search) {
+    try {
+      // Étape 1 : Récupérer toutes les personId à partir de l'institutionId
+      const exams = await Exam.find({ institutionId: institutionId }).select('personId');
+
+      // Récupérer les personId uniques
+      const personIds = [...new Set(exams.map(exam => exam.personId))];
+
+      // Étape 2 : Récupérer toutes les companies associées à ces personId
+      const persons = await Person.find({ _id: { $in: personIds } }).select('company_id');
+
+      // Récupérer les companyId uniques
+      const companyIds = [...new Set(persons.flatMap(person => person.company_id))];
+
+      // Étape 3 : Récupérer toutes les informations des entreprises associées à ces companyId
+      const companies = await Company.find({ _id: { $in: companyIds } })
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .sort({ [sort]: order === 'desc' ? -1 : 1 })
+          .populate('adminId', 'name email'); // Joindre les administrateurs depuis la table users
+
+      // Étape 4 : Compter le nombre total d'entreprises (sans pagination)
+      const totalCompanies = await Company.countDocuments({ _id: { $in: companyIds } });
+
+      return {
+        companies: companies,
+        totalCompanies: totalCompanies,
+      };
+    } catch (err) {
+      console.error('Error fetching companies and admins:', err);
+      throw err;
+    }
+  }
+
+  async getCompaniesAndAdminsByInstitutionId2(options) {
+    try {
+      console.log(options)
+      // Étape 1 : Récupérer toutes les personId à partir de l'institutionId
+      const exams = await Exam.find({ institutionId: options.institutionId }).select('personId');
+
+      // Récupérer les personId uniques
+      const personIds = [...new Set(exams.map(exam => exam.personId))];
+      console.log(personIds)
+
+      // Étape 2 : Récupérer toutes les companies associées à ces personId
+      const persons = await Person.find({ _id: { $in: personIds } }).select('company_id');
+
+      // Récupérer les companyId uniques
+      const companyIds = [...new Set(persons.flatMap(person => person.company_id))];
+
+      // Étape 3 : Agrégation pour récupérer les entreprises paginées avec les administrateurs
+      const aggregate = Company.aggregate([
+        { $match: { _id: { $in: companyIds } } },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'adminId',
+            foreignField: '_id',
+            as: 'admin',
+          },
+        },
+        {
+          $lookup: {
+            from: 'persons',
+            localField: 'promoterId',
+            foreignField: '_id',
+            as: 'promoter',
+          },
+        },
+      ]);
+
+
+      // Ajouter une recherche par nom de l'entreprise ou nom de l'administrateur
+      const searchRegex = new RegExp(options.search, 'i');
+      aggregate.append({
+        $match: {
+          $or: [
+            { name: { $regex: searchRegex } },
+            { 'admin.name': { $regex: searchRegex } },
+          ],
+        },
+      });
+
+      return await Company.aggregatePaginate(aggregate, options);
+    } catch (err) {
+      console.error('Error fetching companies and admins:', err);
+      throw err;
+    }
+  }
+
 }
 
 const companyRepository = new CompanyRepository();
