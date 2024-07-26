@@ -8,5 +8,5 @@ services:
     environment:
       - NODE_ENV=production
     volumes:
-      - ${DEPLOY_PATH}/.env:/app/.env
+      - .env:/app/.env
     restart: always
