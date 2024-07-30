@@ -158,7 +158,7 @@ class CompanyRegistrationStrategy extends RegistrationStrategy {
         const person = await personRepository.create(personDatas);
 
         // Envoi de l'email de validation
-        const imagePath = path.join(__dirname, 'public/logos/xkorin.PNG');
+        const imagePath = path.join(__dirname, '../public/logos/xkorin.PNG');
         const base64String = await Helper.imageToBase64(imagePath);
         const emailDatas = {
             name: datas.name,
@@ -202,7 +202,7 @@ class InstitutionRegistrationStrategy extends RegistrationStrategy {
         const institution = await institutionRepository.create(institutionDatas);
 
         // Envoi de l'email de validation
-        const imagePath = path.join(__dirname, 'public/logos/xkorin.PNG');
+        const imagePath = path.join(__dirname, '../public/logos/xkorin.PNG');
         const base64String = await Helper.imageToBase64(imagePath);
         const emailDatas = {
             name: datas.name,
