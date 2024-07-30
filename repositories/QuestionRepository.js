@@ -22,19 +22,22 @@ class QuestionRepository {
         try {
             const englishQuestion = questions.filter(question => question.isoCode === 'en');
             // Enregistrer la question principale
-            const createdQuestion = await Question.create({ label: englishQuestion[0].label, type: 'radio', variableId, weighting: datas.weighting, profilId: datas.profil });
+
+            return await Promise.all(datas.profils.map(async (profil) => {
+                const createdQuestion = await Question.create({ label: englishQuestion[0].label, type: 'radio', variableId, weighting: datas.weighting, profilId: profil });
+                await Promise.all(questions.map(async (question) => {
+
+                    const language = await Language.findOne({ isoCode: question.isoCode });
+                    if (language) {
+                        await QuestionTranslation.create({ label: question.label, languageId: language._id, questionId: createdQuestion._id });
+                        return language._id;
+                    }
+                }));
+
+                return createdQuestion;
+            }))
 
 
-            await Promise.all(questions.map(async (question) => {
-
-                const language = await Language.findOne({ isoCode: question.isoCode });
-                if (language) {
-                    await QuestionTranslation.create({ label: question.label, languageId: language._id, questionId: createdQuestion._id });
-                    return language._id;
-                }
-            }));
-
-            return createdQuestion;
         } catch (error) {
             console.error("Erreur lors de la création de la question et de ses traductions:", error);
             throw error;
