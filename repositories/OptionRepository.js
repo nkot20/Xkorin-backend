@@ -9,7 +9,7 @@ class OptionRepository {
     async create(payload, translations) {
         try {
             const englishProposition = translations.filter(proposition => proposition.isoCode === 'en');
-            const option = await Option.create({label: englishProposition[0].label, value: payload.value});
+            const option = await Option.create({label: englishProposition[0].label, value: payload.value, isItImportant: payload.isItImportant});
             await Promise.all(translations.map(async (optionTranslation) => {
                 const language = await Language.findOne({ isoCode: optionTranslation.isoCode });
                 if (language) {
