@@ -69,7 +69,6 @@ jobs:
           target: ${{ secrets.DEPLOY_PATH }}
           overwrite: true
           debug: true
-
       - name: SSH into the server and deploy with Docker Compose
         uses: appleboy/ssh-action@master
         with:
