@@ -103,7 +103,7 @@ class ImprintRepository {
         try {
             // Trouver les imprintIds d'une sous catégorie
             let imprintIds = await subcategoryImprintRepository.getImprintIdBySubcategoryId(subcategoryId);
-            //imprintIds = ['6637a43d72e10eed26cd7d62']
+
             // Trouver l'ID de la langue
             const language = await Language.findOne({ isoCode });
             if (!language) {
@@ -112,7 +112,8 @@ class ImprintRepository {
             const languageId = language._id;
 
             // Récupérer les empreintes
-            const imprints = await Imprint.find({ _id: { $in: imprintIds } }).sort({ number: 1 });
+            let imprints = await Imprint.find({ _id: { $in: imprintIds } });
+
 
             let variablesWithImprints = [];
 
@@ -185,7 +186,12 @@ class ImprintRepository {
                     variables: updatedOrphanVariables,
                 });
             }))
-
+            variablesWithImprints = variablesWithImprints.sort((a,b) => {
+                if (a.imprint.number > b.imprint.number)
+                    return 1;
+                else
+                    return -1;
+            })
             return variablesWithImprints;
 
         } catch (error) {
