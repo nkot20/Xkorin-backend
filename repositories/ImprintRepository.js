@@ -896,6 +896,7 @@ class ImprintRepository {
     async getDatasForEachExam(institutionId, personId) {
         try {
             const exams = await examRepository.getExamsByPersonAndInstitution(personId, institutionId);
+            console.log(exams)
             const evolution = [];
             const indexValues = [];
             let imprintsData = [];
@@ -923,6 +924,7 @@ class ImprintRepository {
             const variableTree = await this.buildVariableTree(latestExam._id);
             return {examDetails, evolution: {indexValues, imprintsData}, imprintValue, variableTree};
         } catch (error) {
+            console.log(error)
             throw error;
         }
     }
