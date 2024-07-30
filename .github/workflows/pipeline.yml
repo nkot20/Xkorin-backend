@@ -78,5 +78,6 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
+            docker-compose down
             docker-compose pull app
             docker-compose up -d
