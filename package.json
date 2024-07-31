@@ -6,7 +6,7 @@
     "start": "node ./bin/www",
     "startnodemon": "nodemon ./bin/www",
     "lint": "./node_modules/.bin/eslint",
-    "test": "cross-env NODE_ENV=test jest --testTimeout=5000"
+    "test": "jest --testTimeout=5000"
   },
   "config": {
     "exec": "docker compose exec -w /workspace app",
