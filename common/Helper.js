@@ -6,7 +6,8 @@ const pdf = require("pdf-creator-node");
 const fs = require("fs");
 const path = require('path');
 // Read HTML Template
-const template = fs.readFileSync("./templates/Certificat/page.html", "utf8");
+const templateCertificat = fs.readFileSync("./templates/Certificat/page.html", "utf8");
+const templateDashboard = fs.readFileSync("./templates/Dashboard/imprint-dashboard.html", "utf8");
 const QRCode = require('qrcode');
 const mustache = require('mustache')
 const puppeteer = require('puppeteer');
@@ -133,7 +134,7 @@ module.exports = class Helper {
 
   static printCertificatTrainingImprint(datas, idQuiz, idUsager) {
     try {
-      const html = mustache.render(template, datas);
+      const html = mustache.render(templateCertificat, datas);
       let document = {
         html: html,
         data: {
@@ -182,16 +183,16 @@ module.exports = class Helper {
     });
   }
 
-  static async exportWebsiteAsPdf(data, examId, imprint) {
+  static async exportCertificatExamAsPdf(data, examId, imprint) {
     try {
-      const directoryPath = "./public/certificats/imprints/"+examId;
+      const directoryPath = "../public/certificats/imprints/"+examId;
 
       if (!fs.existsSync(directoryPath)){
         fs.mkdirSync(directoryPath, { recursive: true });
       } else {
         return;
       }
-      const html = mustache.render(template, data);
+      const html = mustache.render(templateCertificat, data);
       // Create a browser instance
       const browser = await puppeteer.launch({
         headless: 'new'
@@ -210,7 +211,50 @@ module.exports = class Helper {
       //this.createDirectoryIfNotExistsSync(directoryPath);
       // Download the PDF
       const PDF = await page.pdf({
-        path: "./public/certificats/imprints/"+examId+ "/" +imprint+ ".pdf",
+        path: "../public/certificats/imprints/"+examId+ "/" +imprint+ ".pdf",
+        margin: { top: '5px', right: '10px', bottom: '5px', left: '10px' },
+        printBackground: true,
+        format: 'A4',
+      });
+
+      // Close the browser instance
+      await browser.close();
+
+      return PDF;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async exportDashboardExamAsPdf(data, examId, imprint) {
+    try {
+      const directoryPath = "../public/dashboard/"+examId;
+
+      if (!fs.existsSync(directoryPath)){
+        fs.mkdirSync(directoryPath, { recursive: true });
+      } else {
+        return;
+      }
+      const html = mustache.render(templateCertificat, data);
+      // Create a browser instance
+      const browser = await puppeteer.launch({
+        headless: 'new'
+      });
+
+      // Create a new page
+      const page = await browser.newPage();
+
+      await page.setContent(html, { waitUntil: 'domcontentloaded' });
+
+      await page.waitForSelector('img', { timeout: 30000 });
+
+      // To reflect CSS used for screens instead of print
+      await page.emulateMediaType('screen');
+
+      //this.createDirectoryIfNotExistsSync(directoryPath);
+      // Download the PDF
+      const PDF = await page.pdf({
+        path: "../public/certificats/imprints/"+examId+ "/" +imprint+ ".pdf",
         margin: { top: '5px', right: '10px', bottom: '5px', left: '10px' },
         printBackground: true,
         format: 'A4',
@@ -245,25 +289,26 @@ module.exports = class Helper {
 
   /**
    * Fonction pour combiner des PDF en un seul fichier
-   * @param {string} pdfDir - Chemin du répertoire contenant les fichiers PDF à combiner
+   * @param {string} pdfDirCertificat - Chemin du répertoire contenant les fichiers PDF à combiner
    * @param {string} outputFilePath - Chemin du fichier PDF combiné à générer
    */
-  static async combinePdfs(pdfDir, outputFilePath) {
+  static async combinePdfs(pdfDirCertificat,pdfDirDashboard,  outputFilePath) {
     try {
       if (fs.existsSync(outputFilePath)){
         console.log("file already combined");
         return ;
       }
       // Lire tous les fichiers du répertoire
-      const files = await fs.promises.readdir(pdfDir);
+      const filesCertificates = await fs.promises.readdir(pdfDirCertificat);
       // Filtrer pour obtenir uniquement les fichiers PDF
-      const pdfPaths = files.filter(file => path.extname(file).toLowerCase() === '.pdf')
-          .map(file => path.join(pdfDir, file));
-
-      if (pdfPaths.length === 0) {
+      const pdfPathsCertificates = filesCertificates.filter(file => path.extname(file).toLowerCase() === '.pdf')
+          .map(file => path.join(pdfDirCertificat, file));
+      const pdfPathsDashboard = filesCertificates.filter(file => path.extname(file).toLowerCase() === '.pdf')
+          .map(file => path.join(pdfDirCertificat, file));
+      if (pdfPathsCertificates.length === 0) {
         throw new Error('Aucun fichier PDF trouvé dans le répertoire spécifié.');
       }
-
+      const pdfPaths = [...pdfPathsCertificates, ...pdfPathsDashboard]
       // Créer un nouveau document PDF combiné
       const combinedPdf = await PDFDocument.create();
 

@@ -80,7 +80,7 @@ router.get(
 router.get(
     '/score/:id',
     asyncHandler(async (req, res) => {
-        const response = await imprintRepository.calulateImprintValue(req.params.id);
+        const response = await imprintRepository.calculateImprintValue(req.params.id);
         return res.status(200).send({ score: response });
     })
 );
@@ -99,6 +99,37 @@ router.get(
         return res.status(200).send(response);
     })
 );
+
+/**
+ * @route GET /dashboard/:examId
+ * @desc Get dashboard data for an exam
+ * @desc Builds a variable tree for a specific exam ID
+ * @access Public
+ * @param {string} examId - The ID of the exam
+ */
+router.get(
+    '/dashboard/:examId',
+    asyncHandler(async (req, res) => {
+        const response = await imprintRepository.buildVariableTree(req.params.examId);
+        return res.status(200).send(response);
+    })
+);
+
+
+/**
+ * @route GET /get-certificate-and-dashboard/:examId
+ * @desc Get generated file for exam
+ * @access Public
+ * @param {string} examId - The ID of the exam
+ */
+router.get(
+    '/get-certificate-and-dashboard/:examId',
+    asyncHandler(async (req, res) => {
+        const response = await imprintRepository.buildVariableTree(req.params.examId);
+        return res.status(200).send(response);
+    })
+);
+
 
 /**
  * @route GET /cii/:examId

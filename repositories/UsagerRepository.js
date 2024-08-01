@@ -30,7 +30,7 @@ class UsagerRepository {
                     formation: usager.title,
                     points: pointsUsagers[usagerId]
                 }, usager._id, quizId);
-                Helper.exportWebsiteAsPdf({
+                Helper.exportCertificatExamAsPdf({
                     date: this.formatDate(new Date()),
                     dateExpiration: this.formatDate(this.addYearsToDate(new Date(),1)),
                     lastname: usager.civilite + ' '+usager.last_name,

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impression de l'Empreinte</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+
+        .imprint-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .social-exposure {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            position: relative;
+            min-width: 220px;
+        }
+
+        .variable-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .categories {
+            margin-bottom: 10px;
+        }
+
+        .exposure-row {
+            margin-bottom: 10px;
+        }
+
+        .category {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 5px;
+            text-align: end;
+        }
+
+        .squares {
+            display: flex;
+            justify-content: end;
+            gap: 2px;
+        }
+
+        .square {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            border-radius: 3px;
+        }
+
+        .green-star {
+            background-color: #2f9e44;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23fff" viewBox="0 0 24 24"><path d="M12 17.3l6.2 4.7-4.8-7.8 6.2-4.8H11L12 0 9.8 9.4H3.6l6.2 4.8-4.8 7.8z"/></svg>');
+            background-size: 16px 16px;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .yellow-star {
+            background-color: #f39c12;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23fff" viewBox="0 0 24 24"><path d="M12 17.3l6.2 4.7-4.8-7.8 6.2-4.8H11L12 0 9.8 9.4H3.6l6.2 4.8-4.8 7.8z"/></svg>');
+            background-size: 16px 16px;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .red-star {
+            background-color: #e74c3c;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23fff" viewBox="0 0 24 24"><path d="M12 17.3l6.2 4.7-4.8-7.8 6.2-4.8H11L12 0 9.8 9.4H3.6l6.2 4.8-4.8 7.8z"/></svg>');
+            background-size: 16px 16px;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .progress-container {
+            position: absolute;
+            bottom: 20px;
+            right: 8px;
+            top: 20px;
+            width: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .progress {
+            background-color: #2f9e44;
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        h1,
+        h2,
+        p {
+            text-align: center;
+        }
+
+        #image_center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .text {
+            width: auto;
+            text-align: justify;
+            color: #BFBFBE;
+            margin-top: -2%;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="imprint-container">
+    <!-- Exemple d'une section avec les données -->
+    <div class="social-exposure">
+        <h2 class="variable-title">Working Conditions</h2>
+        <div class="categories">
+            <div class="exposure-row">
+                <div class="category">Workload</div>
+                <div class="squares">
+                    <div class="square {{getStarClass(7)}}"></div>
+                    <div class="square {{getStarClass(7)}}"></div>
+                    <div class="square {{getStarClass(7)}}"></div>
+                    <div class="square {{getStarClass(7)}}"></div>
+                    <div class="square {{getStarClass(7)}}"></div>
+                    <div class="square {{getStarClass(7)}}"></div>
+                    <div class="square {{getStarClass(7)}}"></div>
+                </div>
+            </div>
+            <div class="exposure-row">
+                <div class="category">Competence</div>
+                <div class="squares">
+                    <div class="square {{getStarClass(5)}}"></div>
+                    <div class="square {{getStarClass(5)}}"></div>
+                    <div class="square {{getStarClass(5)}}"></div>
+                    <div class="square {{getStarClass(5)}}"></div>
+                    <div class="square {{getStarClass(5)}}"></div>
+                    <div class="square {{getStarClass(5)}}"></div>
+                    <div class="square {{getStarClass(5)}}"></div>
+                </div>
+            </div>
+            <div class="exposure-row">
+                <div class="category">Fairness in Remunerations</div>
+                <div class="squares">
+                    <div class="square {{getStarClass(4)}}"></div>
+                    <div class="square {{getStarClass(4)}}"></div>
+                    <div class="square {{getStarClass(4)}}"></div>
+                    <div class="square {{getStarClass(4)}}"></div>
+                    <div class="square {{getStarClass(4)}}"></div>
+                    <div class="square {{getStarClass(4)}}"></div>
+                    <div class="square {{getStarClass(4)}}"></div>
+                </div>
+            </div>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress" style="height: {{calculateProgressBarHeight([7,5,4])}}%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ajoutez d'autres sections ici de la même manière que l'exemple ci-dessus -->
+
+<script>
+    // Fonction pour calculer la classe des étoiles
+    function getStarClass(value) {
+        if (value >= 6) return "green-star";
+        if (value >= 4) return "yellow-star";
+        return "red-star";
+    }
+
+    // Fonction pour calculer la hauteur de la barre de progression
+    function calculateProgressBarHeight(values) {
+        const totalPossible = values.length * 7; // Si chaque catégorie est sur 7
+        const totalActual = values.reduce((acc, val) => acc + val, 0);
+        return (totalActual / totalPossible) * 100;
+    }
+</script>
+</body>
+
+</html>
+
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impression de l'Empreinte</title>
+    <style>
+        /* Ajoutons un style de base pour la mise en forme */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+
+        .imprint-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 20px;
+        }
+
+        @media (min-width: 640px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .social-exposure {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .categories {
+            margin-bottom: 10px;
+        }
+
+        .exposure-row {
+            margin-bottom: 10px;
+        }
+
+        .category {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 5px;
+            text-align: end;
+        }
+
+        .squares {
+            display: flex;
+            justify-content: end;
+            gap: 2px;
+        }
+
+        .square {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            border-radius: 3px;
+        }
+
+        .green-star {
+            background-color: #2f9e44;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23fff" viewBox="0 0 24 24"><path d="M12 17.3l6.2 4.7-4.8-7.8 6.2-4.8H11L12 0 9.8 9.4H3.6l6.2 4.8-4.8 7.8z"/></svg>');
+            background-size: 16px 16px;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .yellow-star {
+            background-color: #f39c12;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23fff" viewBox="0 0 24 24"><path d="M12 17.3l6.2 4.7-4.8-7.8 6.2-4.8H11L12 0 9.8 9.4H3.6l6.2 4.8-4.8 7.8z"/></svg>');
+            background-size: 16px 16px;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .red-star {
+            background-color: #e74c3c;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23fff" viewBox="0 0 24 24"><path d="M12 17.3l6.2 4.7-4.8-7.8 6.2-4.8H11L12 0 9.8 9.4H3.6l6.2 4.8-4.8 7.8z"/></svg>');
+            background-size: 16px 16px;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .progress-container {
+            position: absolute;
+            bottom: 20px;
+            right: 8px;
+            top: 20px;
+            width: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .progress {
+            background-color: #2f9e44;
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        .not-completed {
+            text-align: center;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .not-completed h2 {
+            color: #999;
+        }
+    </style>
+</head>
+
+<body>
+<p id="intro">
+    Given the assessment of {{date}} <br />
+    Given the decision of {{date}} that resulted from it
+</p>
+<p>
+    <h1 style="text-transform: uppercase; margin-top: -2%">{{formation}}</h1>
+    <div id="image_center">
+        <img src="data:image/jpg;base64,{{diamantlogo}}" width="140px" height="140px" />
+    </div>
+   <!-- <p style="margin-top: 0%"> is awarded to </p>
+    <h1 style="text-transform: uppercase;margin-top: -2%">{{lastname}} <span style="text-transform: capitalize;">{{firstname}}</span></h1>-->
+</p>
+<div class="gap-6 w-full min-w-0 bg-card shadow rounded-2xl overflow-hidden">
+    <!-- Remplacez {{imprintName}} par le nom de l'empreinte spécifique à imprimer -->
+    <h1 class="imprint-title">{{imprintName}}</h1>
+
+    <div class="grid">
+        <!-- Boucle sur les variables de l'empreinte -->
+        {{#each imprintVariables}}
+        <div class="social-exposure">
+            <h2>{{name}}</h2>
+            <div class="content mt-2">
+                <div class="categories">
+                    <!-- Boucle sur les enfants de chaque variable -->
+                    {{#each children}}
+                    <div class="exposure-row">
+                        <div class="category text-end">{{name}}</div>
+                        <div class="squares">
+                            <!-- Génération des carrés colorés -->
+                            {{#eachSquares value}}
+                            <div class="square {{className}}"></div>
+                            {{/eachSquares}}
+                        </div>
+                    </div>
+                    {{/each}}
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress" style="height: {{calculateProgress children}}%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{/each}}
+
+        <!-- Section pour les empreintes non disponibles -->
+        {{#unless imprintIsAvailable}}
+        <div class="not-completed">
+            <h2 class="text-2xl text-center">Non complété</h2>
+        </div>
+        {{/unless}}
+    </div>
+</div>
+
+<script>
+    // Ajoutez ici votre logique JavaScript pour le traitement des données et la génération des carrés
+    Handlebars.registerHelper('eachSquares', function(value, options) {
+        let result = '';
+        for (let i = 0; i < 7; i++) {
+            const className = i < value ? getStarClass(value) : 'grey-star';
+            result += options.fn({ className: className });
+        }
+        return result;
+    });
+
+    function getStarClass(value) {
+        if (value >= 6) return "green-star";
+        if (value >= 4) return "yellow-star";
+        return "red-star";
+    }
+
+    Handlebars.registerHelper('calculateProgress', function(children) {
+        const total = children.reduce((acc, child) => acc + child.value, 0);
+        const max = children.length * 7;
+        return (total / max) * 100;
+    });
+</script>
+</body>
+
+</html>

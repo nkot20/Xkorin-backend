@@ -4,6 +4,7 @@ const Person = require('../models/Person');
 const Company = require('../models/Company');
 const Program = require('../models/Program');
 const Institution = require('../models/Institution');
+const mongoose = require('mongoose');
 class ExamRepository {
 
     /**
@@ -91,6 +92,49 @@ class ExamRepository {
             throw error;
         }
     }
+
+    async getPersonProfileByExamId(examId) {
+        try {
+            // Utiliser l'agrégat pour récupérer le profil de la personne
+            const result = await Exam.aggregate([
+                { $match: { _id: mongoose.Types.ObjectId(examId) } }, // Filtrer par examId
+                {
+                    $lookup: {
+                        from: 'persons', // Nom de la collection des personnes
+                        localField: 'personId',
+                        foreignField: '_id',
+                        as: 'personProfile'
+                    }
+                },
+                { $unwind: '$personProfile' }, // Décompresser le tableau résultant
+                {
+                    $project: {
+                        _id: 0, // Exclure l'_id de l'examen
+                        'personProfile._id': 1,
+                        'personProfile.name': 1,
+                        'personProfile.email': 1,
+                        'personProfile.birthdate': 1,
+                        'personProfile.gender': 1,
+                        'personProfile.mobile_no': 1,
+                        'personProfile.matrimonial_status': 1,
+                        'personProfile.level_of_education': 1,
+                        'personProfile.role': 1,
+                        'personProfile.profil_id': 1
+                    }
+                }
+            ]);
+
+            if (!result || result.length === 0) {
+                throw new Error('Examen ou profil de la personne non trouvé');
+            }
+
+            return result[0].personProfile.profil_id;
+        } catch (error) {
+            console.error('Erreur lors de la récupération du profil de la personne:', error);
+            throw error;
+        }
+    }
+
 
     /**
      *

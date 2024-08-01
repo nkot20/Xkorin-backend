@@ -501,7 +501,15 @@ class ImprintRepository {
                        imprint,
                        isAvailable,
                        variables,
-                   }))
+                   })).then(value => {
+                      Helper.exportDashboardExamAsPdf({
+                          date: this.formatDate(new Date()),
+                          dateExpiration: this.formatDate(this.addYearsToDate(new Date(),1)),
+                          imprintName: imprint.name + ' imprint',
+                          points: value,
+                          imprintVariables: value.variables,
+                      }, examId, imprint.name)
+                  })
                )
            );
         } catch (error) {
@@ -537,8 +545,9 @@ class ImprintRepository {
                 }
             });
 
+            const profilId = await examRepository.getPersonProfileByExamId(examId)
             // Étape 3 : Récupérer toutes les questions et réponses en une seule requête
-            const questions = await Question.find({ variableId: { $in: variables.map(v => v._id) }, weighting: false }).lean();
+            const questions = await Question.find({ variableId: { $in: variables.map(v => v._id) }, weighting: false, profilId }).lean();
             const answers = await Answer.find({ questionId: { $in: questions.map(q => q._id) }, examId }).lean();
 
             // Créer une map pour les options par ID
@@ -562,7 +571,7 @@ class ImprintRepository {
                 });
 
                 // Calcul de la valeur de la variable feuille
-                variableMap.get(variable._id.toString()).value = values.reduce((sum, val) => sum + val, 0) / values.length;
+                variableMap.get(variable._id.toString()).value = Math.ceil(values.reduce((sum, val) => sum + val, 0) / values.length);
             });
 
             if (countAnswer === leafVariables.length) {
@@ -614,77 +623,59 @@ class ImprintRepository {
             return cachedData;
         }
 
-        // Récupérer toutes les variables pour l'empreinte
+        // Étape 1 : Récupérer toutes les variables associées à l'empreinte
         const variables = await Variable.find({ imprintId }).lean();
-        const variableMap = new Map();
 
-        variables.forEach((variable) => {
+        const variableMap = new Map();
+        variables.forEach(variable => {
             variableMap.set(variable._id.toString(), {
                 ...variable,
+                children: [],
                 weight: variable.defaultWeight || 0,
                 value: 0
             });
         });
 
-        // Récupérer toutes les questions et leurs réponses liées aux leaf variables de l'empreinte
-        const leafVariableIds = variables.filter(v => !v.children.length).map(v => v._id);
+        // Étape 3 : Récupérer les poids des variables feuilles
+        const leafVariables = variables.filter(variable => variable.children.length === 0);
 
-        const answers = await Answer.aggregate([
-            {
-                $match: {
-                    examId,
-                    questionId: { $in: await Question.find({ variableId: { $in: leafVariableIds } }).distinct('_id') }
-                }
-            },
-            {
-                $lookup: {
-                    from: 'options',
-                    localField: 'optionId',
-                    foreignField: '_id',
-                    as: 'option'
-                }
-            },
-            {
-                $unwind: '$option'
-            },
-            {
-                $lookup: {
-                    from: 'questions',
-                    localField: 'questionId',
-                    foreignField: '_id',
-                    as: 'question'
-                }
-            },
-            {
-                $unwind: '$question'
-            },
-            {
-                $project: {
-                    variableId: '$question.variableId',
-                    value: '$option.value',
-                    weighting: '$question.weighting'
-                }
-            }
-        ]);
+        // Récupérer toutes les questions pour les variables feuilles
+        const questionIds = leafVariables.map(v => v._id);
+        const questions = await Question.find({ variableId: { $in: questionIds } }).lean();
 
-        // Mise à jour des poids et des valeurs des variables
-        answers.forEach(({ variableId, value, weighting }) => {
-            const variable = variableMap.get(variableId.toString());
-            if (variable) {
-                if (weighting) {
-                    variable.weight = value;
-                } else {
-                    variable.value = value;
+        // Récupérer toutes les réponses pour les questions du même examen
+        const answerIds = questions.map(q => q._id);
+        const answers = await Answer.find({ questionId: { $in: answerIds }, examId }).lean();
+
+        // Récupérer toutes les options pour les réponses trouvées
+        const optionIds = answers.map(a => a.optionId);
+        const options = await Option.find({ _id: { $in: optionIds } }).lean();
+
+        // Créer une map pour les options afin de les récupérer rapidement
+        const optionMap = new Map(options.map(option => [option._id.toString(), option]));
+
+        // Calculer le poids et la valeur de chaque variable feuille
+        leafVariables.forEach(variable => {
+            const variableQuestions = questions.filter(q => q.variableId.toString() === variable._id.toString());
+            const variableAnswers = variableQuestions.map(q => answers.find(a => a.questionId.toString() === q._id.toString()));
+
+            variableAnswers.forEach(answer => {
+                if (answer) {
+                    const option = optionMap.get(answer.optionId.toString());
+                    if (option) {
+                        if (questions.find(q => q._id.toString() === answer.questionId.toString()).weighting) {
+                            variable.weight = option.value;
+                        } else {
+                            variable.value = option.value;
+                        }
+                    }
                 }
-            }
+            });
         });
 
-        const leafVariables = Array.from(variableMap.values()).filter(variable => leafVariableIds.includes(variable._id));
-
-        // Calcul du poids total
         const totalWeight = leafVariables.reduce((sum, variable) => sum + variable.weight, 0);
 
-        // Calcul du score final
+        // Calculer le score final
         let score = Math.ceil((leafVariables.reduce((sum, variable) => sum + (variable.weight / totalWeight) * variable.value, 0) / 7) * 1216);
         if (isNaN(score)) score = 0;
 
@@ -692,7 +683,6 @@ class ImprintRepository {
         await setCache(cacheKey, score);
         return score;
     }
-
 
     /**
      * get confidence index to the exam
@@ -821,7 +811,7 @@ class ImprintRepository {
                 const exam = await Exam.findById(examId);
                 const person = await Person.findById(exam.personId);
                 await this.calculateImprintValue(imprint.id, examId).then(value => {
-                     Helper.generateQrCode({
+                   /*  Helper.generateQrCode({
                         date: this.formatDate(new Date()),
                         nom: person.name,
                         formation: imprint.name + ' imprint',
@@ -842,13 +832,13 @@ class ImprintRepository {
                         mmlogo: this.imageFileToBase64('./public/logos/mm_logo.jpg'),
                         signature1: this.imageFileToBase64('./public/logos/signaturebossou.PNG'),
                         signature2: this.imageFileToBase64('./public/logos/signaturemondo.PNG'),
-                    }, examId, imprint.name)
+                    }, examId, imprint.name)*/
 
                     response.push({imprint, value});
                 });
 
             })).then(async value => {
-                await Helper.combinePdfs("./public/certificats/imprints/"+examId, "./public/certificats/imprints-fusion/"+examId+".pdf")
+                //await Helper.combinePdfs("./public/certificats/imprints/"+examId, "./public/certificats/imprints-fusion/"+examId+".pdf")
             });
             response = response.sort((a, b) => {
                 if (a.imprint.number > b.imprint.number)
@@ -861,6 +851,71 @@ class ImprintRepository {
                 imprintsValues.push(item.value)
             });
              return imprintsValues;
+        } catch (error) {
+            console.log(error)
+            throw error;
+        }
+    }
+
+    /**
+     *
+     * @param examId
+     * @returns {Promise<*[]>}
+     */
+    async printCertificate(examId){
+        try {
+            let imprints = await Imprint.find();
+            imprints = imprints.sort((a, b) => {
+                if (a.number > b.number)
+                    return 1;
+                else
+                    return -1;
+            })
+            console.log("Imprint sorted" ,imprints)
+            let response = [];
+
+            await Promise.all(imprints.map(async (imprint) => {
+                const exam = await Exam.findById(examId);
+                const person = await Person.findById(exam.personId);
+                await this.calculateImprintValue(imprint.id, examId).then(value => {
+                      Helper.generateQrCode({
+                         date: this.formatDate(new Date()),
+                         nom: person.name,
+                         formation: imprint.name + ' imprint',
+                         score: value + '/1216'
+                      }, person._id, examId, imprint.name);
+                      Helper.exportCertificatExamAsPdf({
+                         date: this.formatDate(new Date()),
+                         dateExpiration: this.formatDate(this.addYearsToDate(new Date(),1)),
+                         lastname: person.name,
+                         firstname: '',
+                         formation: imprint.name + ' imprint',
+                         points: value,
+                         qrcode: this.imageFileToBase64('./public/qrcode/'+ imprint.name + '_' +examId+'_'+person._id+'.png'),
+                         logoentetegauche: this.imageFileToBase64('./public/logos/accelerate-africa.jpg'),
+                         logoentetedroit: this.imageFileToBase64('./public/logos/wellbin.PNG'),
+                         diamantlogo: this.imageFileToBase64('./public/logos/diamant_logo.jpg'),
+                         humanbetlogo: this.imageFileToBase64('./public/logos/humanbet_logo.jpg'),
+                         mmlogo: this.imageFileToBase64('./public/logos/mm_logo.jpg'),
+                         signature1: this.imageFileToBase64('./public/logos/signaturebossou.PNG'),
+                         signature2: this.imageFileToBase64('./public/logos/signaturemondo.PNG'),
+                     }, examId, imprint.name)
+
+                    response.push({imprint, value});
+                });
+
+            }));
+            response = response.sort((a, b) => {
+                if (a.imprint.number > b.imprint.number)
+                    return 1;
+                else
+                    return -1;
+            })
+            let imprintsValues = [];
+            response.forEach(item => {
+                imprintsValues.push(item.value)
+            });
+            return imprintsValues;
         } catch (error) {
             console.log(error)
             throw error;
@@ -925,6 +980,14 @@ class ImprintRepository {
             return {examDetails, evolution: {indexValues, imprintsData}, imprintValue, variableTree};
         } catch (error) {
             console.log(error)
+            throw error;
+        }
+    }
+
+    async getFiles(examId) {
+        try {
+            return await Helper.combinePdfs("./public/certificats/imprints/"+examId, "./public/dashboard/"+examId, "./public/certificats/imprints-fusion/"+examId+".pdf")
+        } catch (error) {
             throw error;
         }
     }
