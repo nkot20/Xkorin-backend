@@ -168,12 +168,12 @@ module.exports = class Helper {
   }
 
   static generateQrCode(datas, personId, examId, imprint) {
-    const directoryPath = './public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png';
+    const directoryPath = 'public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png';
 
     if (fs.existsSync(directoryPath)){
       return;
     }
-    QRCode.toFile('./public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png', JSON.stringify(datas), {
+    QRCode.toFile('public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png', JSON.stringify(datas), {
       errorCorrectionLevel: 'H',
       width: 150,
       height: 150
@@ -183,14 +183,18 @@ module.exports = class Helper {
     });
   }
 
-  static async exportCertificatExamAsPdf(data, examId, imprint) {
+  static async exportCertificatExamAsPdf(data, examId, imprint, personId) {
     try {
-      const directoryPath = "../public/certificats/imprints/"+examId;
+      this.generateQrCode({
+        date: data.date,
+        nom: data.name,
+        formation: data.formation,
+        score: data.points + '/1216'
+      }, personId, examId, imprint.name);
+      const directoryPath = "public/certificats/imprints/"+examId;
 
       if (!fs.existsSync(directoryPath)){
         fs.mkdirSync(directoryPath, { recursive: true });
-      } else {
-        return;
       }
       const html = mustache.render(templateCertificat, data);
       // Create a browser instance
@@ -211,7 +215,7 @@ module.exports = class Helper {
       //this.createDirectoryIfNotExistsSync(directoryPath);
       // Download the PDF
       const PDF = await page.pdf({
-        path: "../public/certificats/imprints/"+examId+ "/" +imprint+ ".pdf",
+        path: directoryPath + "/" +imprint+ ".pdf",
         margin: { top: '5px', right: '10px', bottom: '5px', left: '10px' },
         printBackground: true,
         format: 'A4',
@@ -226,41 +230,102 @@ module.exports = class Helper {
     }
   }
 
+  static createSquares(value) {
+    const totalSquares = 7;
+    const squareData = [];
+    for (let i = 0; i < totalSquares; i++) {
+      if (i < totalSquares - value) {
+        squareData.push({ class: 'gray', star: '' });
+      } else {
+        let className = '';
+        let star = '';
+        switch (value) {
+          case 7:
+            className = 'green star';
+            star = '★';
+            break;
+          case 6:
+            className = 'green';
+            break;
+          case 5:
+            className = 'green-white';
+            break;
+          case 4:
+            className = 'orange';
+            break;
+          case 3:
+            className = 'grow';
+            break;
+          case 2:
+            className = 'grow-white';
+            break;
+          case 1:
+            className = 'red';
+            break;
+        }
+        squareData.push({ class: className, star: star });
+      }
+    }
+    console.log()
+    return squareData;
+  }
+
+  static addPositionClasses(variables) {
+    return variables.forEach((variable, index) => {
+      variable.isOdd = (index % 2 !== 0);
+      variable.isEven = (index % 2 === 0);
+    });
+  }
+
+
+
   static async exportDashboardExamAsPdf(data, examId, imprint) {
     try {
-      const directoryPath = "../public/dashboard/"+examId;
+      // Définir les fonctions de calcul
 
-      if (!fs.existsSync(directoryPath)){
-        fs.mkdirSync(directoryPath, { recursive: true });
-      } else {
-        return;
+      // Préparer les données
+      data.variables.forEach(variable => {
+        variable.children.forEach(child => {
+          child.squares = this.createSquares(child.value)
+        });
+        variable.progressBarHeight = ((variable.children.length * 100)/2);
+        variable.progressHeight = ((variable.value * 100) / 7);
+      });
+      this.addPositionClasses(data.variables);
+      // Vérifiez le nombre d'enfants de la première variable
+      if (data.variables.length > 0 && data.variables[0].children.length > 6) {
+        data.variables[data.variables.length - 2].newPage = true;
+        data.variables[data.variables.length - 1].newPage = true;
       }
-      const html = mustache.render(templateCertificat, data);
-      // Create a browser instance
+      // Rendre le template Mustache avec les données préparées
+      const html = mustache.render(templateDashboard, data);
+
+      const directoryPath = "public/dashboard/" + examId;
+      fs.mkdirSync(directoryPath, { recursive: true });
+
+      // Créer une instance de navigateur
       const browser = await puppeteer.launch({
         headless: 'new'
       });
 
-      // Create a new page
+      // Créer une nouvelle page
       const page = await browser.newPage();
-
       await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
       await page.waitForSelector('img', { timeout: 30000 });
 
-      // To reflect CSS used for screens instead of print
+      // Pour refléter le CSS utilisé pour les écrans au lieu de l'impression
       await page.emulateMediaType('screen');
 
-      //this.createDirectoryIfNotExistsSync(directoryPath);
-      // Download the PDF
+      // Télécharger le PDF
       const PDF = await page.pdf({
-        path: "../public/certificats/imprints/"+examId+ "/" +imprint+ ".pdf",
+        path: "public/dashboard/" + examId + "/" + imprint + ".pdf",
         margin: { top: '5px', right: '10px', bottom: '5px', left: '10px' },
         printBackground: true,
         format: 'A4',
       });
 
-      // Close the browser instance
+      // Fermer l'instance du navigateur
       await browser.close();
 
       return PDF;
@@ -294,21 +359,20 @@ module.exports = class Helper {
    */
   static async combinePdfs(pdfDirCertificat,pdfDirDashboard,  outputFilePath) {
     try {
-      if (fs.existsSync(outputFilePath)){
-        console.log("file already combined");
-        return ;
-      }
+
       // Lire tous les fichiers du répertoire
       const filesCertificates = await fs.promises.readdir(pdfDirCertificat);
+      const filesDashboard = await fs.promises.readdir(pdfDirDashboard);
       // Filtrer pour obtenir uniquement les fichiers PDF
       const pdfPathsCertificates = filesCertificates.filter(file => path.extname(file).toLowerCase() === '.pdf')
           .map(file => path.join(pdfDirCertificat, file));
-      const pdfPathsDashboard = filesCertificates.filter(file => path.extname(file).toLowerCase() === '.pdf')
-          .map(file => path.join(pdfDirCertificat, file));
+      const pdfPathsDashboards = filesDashboard.filter(file => path.extname(file).toLowerCase() === '.pdf')
+          .map(file => path.join(pdfDirDashboard, file));
       if (pdfPathsCertificates.length === 0) {
         throw new Error('Aucun fichier PDF trouvé dans le répertoire spécifié.');
       }
-      const pdfPaths = [...pdfPathsCertificates, ...pdfPathsDashboard]
+
+      const pdfPaths = [...pdfPathsCertificates, ...pdfPathsDashboards]
       // Créer un nouveau document PDF combiné
       const combinedPdf = await PDFDocument.create();
 

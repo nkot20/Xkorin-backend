@@ -501,15 +501,7 @@ class ImprintRepository {
                        imprint,
                        isAvailable,
                        variables,
-                   })).then(value => {
-                      Helper.exportDashboardExamAsPdf({
-                          date: this.formatDate(new Date()),
-                          dateExpiration: this.formatDate(this.addYearsToDate(new Date(),1)),
-                          imprintName: imprint.name + ' imprint',
-                          points: value,
-                          imprintVariables: value.variables,
-                      }, examId, imprint.name)
-                  })
+                   }))
                )
            );
         } catch (error) {
@@ -519,6 +511,7 @@ class ImprintRepository {
 
     async buildVariableTreeForImprint(imprintId, examId) {
         try {
+            const imprint = await Imprint.findById(imprintId);
             // Étape 1 : Récupérer toutes les variables associées à l'empreinte
             const variables = await Variable.find({ imprintId }).lean();
             const variableMap = new Map();
@@ -596,11 +589,24 @@ class ImprintRepository {
                     children: variable.children
                 };
             }
-
+            const variablesResponse = rootVariables.map(getRootWithFirstChildren)
             // Retourner les variables racines avec uniquement leurs feuilles
+            if (variablesResponse.length > 0) {
+                Helper.exportDashboardExamAsPdf({
+                    date: this.formatDate(new Date()),
+                    dateExpiration: this.formatDate(this.addYearsToDate(new Date(), 1)),
+                    imprintName: imprint.name + ' imprint',
+                    variables: variablesResponse,
+                    diamantlogo: this.imageFileToBase64('./public/logos/diamant_logo.jpg'),
+                    imprintIsAvailable: ((countAnswer === leafVariables.length) && leafVariables.length > 0)
+                }, examId, imprint.name).then(() => {
+                })
+            }
+
+
             return {
                 isAvailable: ((countAnswer === leafVariables.length) && leafVariables.length > 0),
-                variables: rootVariables.map(getRootWithFirstChildren)
+                variables: variablesResponse
             };
         } catch (error) {
             console.log(error);
@@ -878,12 +884,8 @@ class ImprintRepository {
                 const exam = await Exam.findById(examId);
                 const person = await Person.findById(exam.personId);
                 await this.calculateImprintValue(imprint.id, examId).then(value => {
-                      Helper.generateQrCode({
-                         date: this.formatDate(new Date()),
-                         nom: person.name,
-                         formation: imprint.name + ' imprint',
-                         score: value + '/1216'
-                      }, person._id, examId, imprint.name);
+                    console.log('Imprint value ------------------------------- ' ,value)
+
                       Helper.exportCertificatExamAsPdf({
                          date: this.formatDate(new Date()),
                          dateExpiration: this.formatDate(this.addYearsToDate(new Date(),1)),
@@ -899,7 +901,7 @@ class ImprintRepository {
                          mmlogo: this.imageFileToBase64('./public/logos/mm_logo.jpg'),
                          signature1: this.imageFileToBase64('./public/logos/signaturebossou.PNG'),
                          signature2: this.imageFileToBase64('./public/logos/signaturemondo.PNG'),
-                     }, examId, imprint.name)
+                     }, examId, imprint.name, person._id)
 
                     response.push({imprint, value});
                 });
@@ -986,7 +988,10 @@ class ImprintRepository {
 
     async getFiles(examId) {
         try {
-            return await Helper.combinePdfs("./public/certificats/imprints/"+examId, "./public/dashboard/"+examId, "./public/certificats/imprints-fusion/"+examId+".pdf")
+            await this.printCertificate(examId).then(async (value) => {
+                return await Helper.combinePdfs("public/certificats/imprints/"+examId, "public/dashboard/"+examId, "public/certificats/imprints-fusion/"+examId+".pdf")
+            });
+
         } catch (error) {
             throw error;
         }

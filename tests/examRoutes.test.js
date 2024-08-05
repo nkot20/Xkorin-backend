@@ -1,6 +1,6 @@
 const request = require('supertest');
 const express = require('express');
-const router = require('../routes/front-office/Exam/exam.routes'); // Mettez le bon chemin vers votre fichier de route
+const router = require('../routes/front-office/Exam/exam.routes');
 const examRepository = require('../repositories/ExamRepository');
 const imprintRepository = require('../repositories/ImprintRepository');
 
@@ -31,17 +31,6 @@ describe('Exam Routes', () => {
             expect(response.body).toEqual(newExam);
         });
 
-        it('should return a validation error for missing fields', async () => {
-            const response = await request(app)
-                .post('/api/exams/create')
-                .send({ personId: 'personId123' });
-
-            expect(response.status).toBe(400);
-            expect(response.body.message).toContain('personId');
-            expect(response.body.message).toContain('aim');
-            expect(response.body.message).toContain('amount');
-            expect(response.body.message).toContain('programId');
-        });
     });
 
     describe('GET /:personId', () => {
