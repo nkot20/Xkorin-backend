@@ -186,6 +186,56 @@ class ExamRepository {
         }
     }
 
+    async getInstitutionByExamId(examId) {
+        try {
+            // Utiliser l'agrégat pour récupérer l'institution
+            const result = await Exam.aggregate([
+                { $match: { _id: mongoose.Types.ObjectId(examId) } }, // Filtrer par examId
+                {
+                    $lookup: {
+                        from: 'programs', // Nom de la collection des programmes
+                        localField: 'programId',
+                        foreignField: '_id',
+                        as: 'program'
+                    }
+                },
+                { $unwind: '$program' }, // Décompresser le tableau résultant
+                {
+                    $lookup: {
+                        from: 'institutions', // Nom de la collection des institutions
+                        localField: 'program.institutionId',
+                        foreignField: '_id',
+                        as: 'institution'
+                    }
+                },
+                { $unwind: '$institution' }, // Décompresser le tableau résultant
+                {
+                    $project: {
+                        _id: 0, // Exclure l'_id de l'examen
+                        'institution._id': 1,
+                        'institution.name': 1,
+                        'institution.email': 1,
+                        'institution.phoneNumber': 1,
+                        'institution.address': 1,
+                        'institution.type': 1,
+                        'institution.status': 1,
+                        'institution.customization': 1
+                    }
+                }
+            ]);
+
+            if (!result || result.length === 0) {
+                throw new Error('Institution non trouvée pour cet examen');
+            }
+
+            return result[0].institution; // Retourner directement l'institution
+        } catch (error) {
+            console.error('Erreur:', error.message);
+            throw error;
+        }
+    }
+
+
 
 }
 

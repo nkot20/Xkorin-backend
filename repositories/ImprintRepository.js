@@ -597,7 +597,7 @@ class ImprintRepository {
                     dateExpiration: this.formatDate(this.addYearsToDate(new Date(), 1)),
                     imprintName: imprint.name + ' imprint',
                     variables: variablesResponse,
-                    diamantlogo: this.imageFileToBase64('./public/logos/diamant_logo.jpg'),
+                    //diamantlogo: this.imageFileToBase64('./public/logos/diamant_logo.jpg'),
                     imprintIsAvailable: ((countAnswer === leafVariables.length) && leafVariables.length > 0)
                 }, examId, imprint.name).then(() => {
                 })
@@ -883,25 +883,42 @@ class ImprintRepository {
             await Promise.all(imprints.map(async (imprint) => {
                 const exam = await Exam.findById(examId);
                 const person = await Person.findById(exam.personId);
-                await this.calculateImprintValue(imprint.id, examId).then(value => {
-                    console.log('Imprint value ------------------------------- ' ,value)
+                await this.calculateImprintValue(imprint.id, examId).then(async (value) => {
+                    const institution = await examRepository.getInstitutionByExamId(examId);
 
-                      Helper.exportCertificatExamAsPdf({
-                         date: this.formatDate(new Date()),
-                         dateExpiration: this.formatDate(this.addYearsToDate(new Date(),1)),
-                         lastname: person.name,
-                         firstname: '',
-                         formation: imprint.name + ' imprint',
-                         points: value,
-                         qrcode: this.imageFileToBase64('./public/qrcode/'+ imprint.name + '_' +examId+'_'+person._id+'.png'),
-                         logoentetegauche: this.imageFileToBase64('./public/logos/accelerate-africa.jpg'),
-                         logoentetedroit: this.imageFileToBase64('./public/logos/wellbin.PNG'),
-                         diamantlogo: this.imageFileToBase64('./public/logos/diamant_logo.jpg'),
-                         humanbetlogo: this.imageFileToBase64('./public/logos/humanbet_logo.jpg'),
-                         mmlogo: this.imageFileToBase64('./public/logos/mm_logo.jpg'),
-                         signature1: this.imageFileToBase64('./public/logos/signaturebossou.PNG'),
-                         signature2: this.imageFileToBase64('./public/logos/signaturemondo.PNG'),
-                     }, examId, imprint.name, person._id)
+                    const basePathGrades = './public/grades'
+                    let gradeLogo = basePathGrades + '/1.PNG';
+                    if(value > 0 && value < 174)
+                      gradeLogo = basePathGrades + '/1.PNG';
+                    if(value > 175 && value < 195)
+                      gradeLogo = basePathGrades + '/2.PNG';
+                    if(value > 196 && value < 386)
+                        gradeLogo = basePathGrades + '/3.PNG';
+                    if(value > 387 && value < 577)
+                        gradeLogo = basePathGrades + '/4.PNG';
+                    if(value > 578 && value < 896)
+                        gradeLogo = basePathGrades + '/5.PNG';
+                    if(value > 897 && value < 1215)
+                        gradeLogo = basePathGrades + '/6.PNG';
+                    if(value >= 1215 && value < 1217)
+                        gradeLogo = basePathGrades + '/7.PNG';
+                    console.log(gradeLogo, value)
+                    Helper.exportCertificatExamAsPdf({
+                     date: this.formatDate(new Date()),
+                     dateExpiration: this.formatDate(this.addYearsToDate(new Date(),1)),
+                     lastname: person.name,
+                     firstname: '',
+                     formation: imprint.name + ' imprint',
+                     points: value,
+                     qrcode: this.imageFileToBase64('./public/qrcode/'+ imprint.name + '_' +examId+'_'+person._id+'.png'),
+                     logoentetegauche: institution.customization.logo,
+                     logoentetedroit: this.imageFileToBase64('./public/logos/wellbin.PNG'),
+                     diamantlogo: this.imageFileToBase64(gradeLogo),
+                     humanbetlogo: this.imageFileToBase64('./public/logos/humanbet_logo.jpg'),
+                     mmlogo: this.imageFileToBase64('./public/logos/mm_logo.jpg'),
+                     signature1: this.imageFileToBase64('./public/logos/signaturebossou.PNG'),
+                     signature2: this.imageFileToBase64('./public/logos/signaturemondo.PNG'),
+                    }, examId, imprint.name, person._id)
 
                     response.push({imprint, value});
                 });
