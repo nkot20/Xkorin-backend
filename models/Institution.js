@@ -61,12 +61,10 @@ function generateRandomString(length) {
     const randomIndex = Math.floor(Math.random() * chars.length);
     result += chars.charAt(randomIndex);
   }
-  console.log(result);
   return result;
 }
 
 institutionSchema.pre('save', async function (next) {
-  console.log(this.business_code);
   if (!this.business_code) {
     let uniqueCode = generateRandomString(10);
     const count = await this.constructor.countDocuments({ business_code: uniqueCode });
@@ -74,7 +72,6 @@ institutionSchema.pre('save', async function (next) {
       this.business_code = uniqueCode;
     } else {
       while (true) {
-        console.log('Generating new string');
         uniqueCode = generateRandomString(10);
         const newCount = await this.constructor.countDocuments({ business_code: uniqueCode });
         if (newCount === 0) {

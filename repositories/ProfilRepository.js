@@ -34,7 +34,7 @@ class ProfilRepository {
                 profilTranslation.forEach(value => {
                     translation += value.label + ' / '
                 })
-                translation = translation.substring(0, translation.length - 2)
+                translation = translation.substring(0, translation.length - 3)
                 response.push({profil, translation});
             }))
             return response;

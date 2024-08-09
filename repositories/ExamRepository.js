@@ -128,7 +128,9 @@ class ExamRepository {
                 throw new Error('Examen ou profil de la personne non trouvé');
             }
 
-            return result[0].personProfile.profil_id;
+            const profil_id = result[0].personProfile.profil_id;
+
+            return profil_id;
         } catch (error) {
             console.error('Erreur lors de la récupération du profil de la personne:', error);
             throw error;

@@ -47,7 +47,6 @@ class ImprintRepository {
             const findLastChildrenWithoutChildren = async (variable) => {
                 const children = await Variable.find({ parent: variable._id });
                 if (children.length === 0) {
-                    console.log("I want to see variable ", variable);
                     const translatedName = await getVariableTranslation(variable, languageId);
                     return [{
                         _id: variable._id,
@@ -63,7 +62,6 @@ class ImprintRepository {
 
             // Fonction pour récupérer la traduction d'une variable
             const getVariableTranslation = async (variable, languageId) => {
-                console.log("I want to see the second variable ", variable);
                 const translation = await VariableTranslation.findOne({
                     variableId: variable._id,
                     languageId
@@ -211,128 +209,93 @@ class ImprintRepository {
      */
     async getRemainingVariablesForImprints(subcategoryId, isoCode, profilId, examId) {
         try {
-            // Find imprint IDs for the given subcategory
-            let imprintIds = await subcategoryImprintRepository.getImprintIdBySubcategoryId(subcategoryId);
+            // Retrieve imprint IDs for the given subcategory
+            const imprintIds = await subcategoryImprintRepository.getImprintIdBySubcategoryId(subcategoryId);
 
-            // Find the language ID for the provided ISO code
+            // Get the language ID using the provided ISO code
             const language = await Language.findOne({ isoCode });
-            if (!language) {
-                throw new Error('Language not found');
-            }
+            if (!language) throw new Error('Language not found');
             const languageId = language._id;
 
-            // Fetch imprints based on the retrieved IDs and sort them
+            // Fetch and sort imprints
             const imprints = await Imprint.find({ _id: { $in: imprintIds } }).sort({ number: 1 });
 
-            let remainingVariablesWithImprints = [];
+            // Array to store the remaining variables with imprints
+            const remainingVariablesWithImprints = [];
 
-            await Promise.all(imprints.map(async (imprint) => {
-                // Retrieve variables without a parent for the specified imprints
-                const variables = await Variable.find({
-                    imprintId: imprint._id,
-                    parent: null
+            // Helper function to check if a variable has already been evaluated
+            const isVariableEvaluated = async (variableId) => {
+                return ExamState.exists({ variableId, examId });
+            };
+
+            // Function to get translated questions for a variable
+            const getTranslatedQuestionForVariable = async (variableId) => {
+                const questions = await Question.find({ variableId, profilId });
+                const translations = await QuestionTranslation.find({ questionId: { $in: questions.map(q => q._id) }, languageId });
+
+                return questions.map(q => {
+                    const translation = translations.find(t => t.questionId.toString() === q._id.toString());
+                    if (translation) q.label = translation.label;
+                    return q;
                 });
+            };
 
-                // Container for variables and their children
-                const variablesWithFirstChild = [];
-                await Promise.all(variables.map(async (variable) => {
-                    const firstsChild = await Variable.find({ parent: variable._id });
-                    const orphanVariables = await this.getLastChildrenForOrphans(firstsChild, languageId);
+            // Process imprints to find remaining variables
+            const variablesPromises = imprints.map(async (imprint) => {
+                const variables = await Variable.find({ imprintId: imprint._id, parent: null });
 
-                    variablesWithFirstChild.push({
-                        variable,
-                        children: orphanVariables
-                    });
+                // Fetch variables with their children
+                const variablesWithChildren = await Promise.all(variables.map(async (variable) => {
+                    const children = await Variable.find({ parent: variable._id });
+                    const orphanVariables = await this.getLastChildrenForOrphans(children, languageId);
+
+                    return { variable, children: orphanVariables };
                 }));
 
-
-                // Helper function to check if a variable has already been evaluated
-                const isVariableEvaluated = async (variableId) => {
-                    const examState = await ExamState.findOne({
-                        variableId,
-                        examId,
-                    });
-                    return !!examState; // Return true if evaluated, false otherwise
-                };
-
-                // Function to get translated questions for a variable
-                const getTranslatedQuestionForVariable = async (variableId) => {
-                    const questions = await Question.find({ variableId, profilId });
-                    let questionsTranslation = [];
-                    await Promise.all(questions.map(async (question) => {
-                        const questionTranslation = await QuestionTranslation.findOne({
-                            questionId: question._id,
-                            languageId: languageId
-                        });
-                        if (questionTranslation) {
-                            question.label = questionTranslation.label;
-                            questionsTranslation.push(question);
-                        }
-                    }));
-
-                    return questionsTranslation;
-                };
-
-                // Process each variable and its children to check for remaining variables
-                const updatedOrphanVariables = await Promise.all(variablesWithFirstChild.map(async (variable) => {
-                    const updatedChildren = await Promise.all(variable.children.map(async (child) => {
-                        // Check if the current child variable has been evaluated
-                        const isEvaluated = await isVariableEvaluated(child._id);
-
-                        if (!isEvaluated) {
-                            const lastChildren = await Promise.all(child.lastChildren.map(async (leaf) => {
-                                const leafEvaluated = await isVariableEvaluated(leaf._id);
-
-                                if (!leafEvaluated) {
+                // Filter variables with non-evaluated children
+                const updatedVariablesPromises = variablesWithChildren.map(async (variable) => {
+                    const updatedChildrenPromises = variable.children.map(async (child) => {
+                        if (!(await isVariableEvaluated(child._id))) {
+                            const lastChildrenPromises = child.lastChildren.map(async (leaf) => {
+                                if (!(await isVariableEvaluated(leaf._id))) {
                                     leaf.questions = await getTranslatedQuestionForVariable(leaf._id);
                                     return leaf;
-                                } else {
-                                    return null; // Skip this leaf if it has been evaluated
                                 }
-                            }));
+                                return null; // Skip evaluated leaves
+                            });
 
-                            const remainingLastChildren = lastChildren.filter(leaf => leaf !== null);
+                            const remainingLastChildren = (await Promise.all(lastChildrenPromises)).filter(leaf => leaf !== null);
 
                             if (remainingLastChildren.length > 0) {
                                 child.lastChildren = remainingLastChildren;
                                 return child;
-                            } else {
-                                return null; // Skip this child if it has no remaining last children
                             }
-                        } else {
-                            return null; // Skip this child if it has been evaluated
                         }
-                    }));
+                        return null; // Skip evaluated children
+                    });
 
-                    // Filter out evaluated children
-                    const remainingChildren = updatedChildren.filter(child => child !== null);
+                    const remainingChildren = (await Promise.all(updatedChildrenPromises)).filter(child => child !== null);
 
-                    // Return the variable if it still has remaining children
                     if (remainingChildren.length > 0) {
                         variable.children = remainingChildren;
                         return variable;
-                    } else {
-                        return null; // Skip this variable if it has no remaining children
                     }
-                }));
+                    return null; // Skip variables without remaining children
+                });
 
-                // Filter out variables with no remaining children
-                const nonEmptyVariables = updatedOrphanVariables.filter(variable => variable !== null);
+                const nonEmptyVariables = (await Promise.all(updatedVariablesPromises)).filter(variable => variable !== null);
 
                 if (nonEmptyVariables.length > 0) {
-                    remainingVariablesWithImprints.push({
-                        imprint,
-                        variables: nonEmptyVariables.map(v => ({
-                            variable: v.variable,
-                            children: v.children
-                        })),
-                    });
+                    return { imprint, variables: nonEmptyVariables.map(v => ({ variable: v.variable, children: v.children })) };
                 }
-            }));
+                return null; // Skip imprints without remaining variables
+            });
 
-            return remainingVariablesWithImprints;
+            const results = (await Promise.all(variablesPromises)).filter(result => result !== null);
+
+            return results;
         } catch (error) {
-            console.error(error);
+            console.error('Error fetching remaining variables:', error);
             throw new Error('An error occurred while fetching the remaining variables.');
         }
     }
