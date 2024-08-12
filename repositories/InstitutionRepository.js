@@ -1,18 +1,14 @@
-
-require('dotenv').config();
+// repositories/InstitutionRepository.js
 const mongoose = require('mongoose');
-const {ObjectId} = require("mongodb");
-const userRepository = require('../repositories/UserRepository');
 const Institution = require('../models/Institution');
-const programRepository = require('../repositories/ProgramRepository');
 
 class InstitutionRepository {
-
     async create(payload) {
         try {
-            const institution =  await Institution.findOne({name: payload.name});
-            if (institution)
-                throw new Error('Institution is already exist');
+            const institution = await Institution.findOne({ name: payload.name });
+            if (institution) {
+                throw new Error('Institution is already exists');
+            }
             const newInstitution = new Institution(payload);
             return await newInstitution.save();
         } catch (error) {
@@ -22,29 +18,13 @@ class InstitutionRepository {
 
     async update(id, payload) {
         try {
-            return await Institution.updateOne({_id: id}, payload);
+            return await Institution.updateOne({ _id: id }, payload);
         } catch (error) {
             throw error;
         }
     }
 
-    async updateAfterFirstInscription(userId, institutionId, payload) {
-        try {
-
-            const newInstitution = await this.update(institutionId, payload.institution);
-            await programRepository.create({
-                institutionId,
-                name: payload.program.name,
-                targetInstitutionId: payload.program.targetInstitutionId
-            });
-            await userRepository.updateUser(userId, {alreadyLogin: true})
-            return newInstitution;
-        } catch (error) {
-            throw Error;
-        }
-    }
-
-    async getAll() {
+    async findAll() {
         try {
             return await Institution.find();
         } catch (error) {
@@ -52,23 +32,23 @@ class InstitutionRepository {
         }
     }
 
-    async getByName(name) {
+    async findByName(name) {
         try {
-            return await Institution.findOne({name});
+            return await Institution.findOne({ name });
         } catch (error) {
             throw error;
         }
     }
 
-    async getByType(type) {
+    async findByType(type) {
         try {
-            return await Institution.find({type});
+            return await Institution.find({ type });
         } catch (error) {
             throw error;
         }
     }
 
-    async getById(id) {
+    async findById(id) {
         try {
             return await Institution.findById(id);
         } catch (error) {
@@ -76,17 +56,13 @@ class InstitutionRepository {
         }
     }
 
-    async getByAdminId(id) {
+    async findByAdminId(id) {
         try {
-            return await Institution.findOne({adminId: new ObjectId(id)});
+            return await Institution.findOne({ adminId: mongoose.Types.ObjectId(id) });
         } catch (error) {
             throw error;
         }
     }
-
-
 }
 
-const intitutionRepository = new InstitutionRepository();
-module.exports = intitutionRepository;
-
+module.exports = new InstitutionRepository();

@@ -1,3 +1,4 @@
+/*
 const { FirebaseScrypt } = require('firebase-scrypt');
 
 const mongoose = require('mongoose');
@@ -61,3 +62,4 @@ UsagerSchema.plugin(aggregatePaginate);
 
 const usager = mongoose.model('usager', UsagerSchema);
 module.exports = usager;
+*/

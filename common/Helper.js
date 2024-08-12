@@ -312,7 +312,7 @@ module.exports = class Helper {
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: 'domcontentloaded' });
 
-      await page.waitForSelector('img', { timeout: 30000 });
+      //await page.waitForSelector('img', { timeout: 120000 });
 
       // Pour refléter le CSS utilisé pour les écrans au lieu de l'impression
       await page.emulateMediaType('screen');

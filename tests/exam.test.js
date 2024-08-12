@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const ExamRepository = require('../repositories/ExamRepository');
+const examService = require('../services/ExamService');
 const Exam = require('../models/Exam');
 const Person = require('../models/Person');
 const Company = require('../models/Company');
@@ -7,7 +7,7 @@ const Program = require('../models/Program');
 const Institution = require('../models/Institution');
 
 
-describe('ExamRepository', () => {
+describe('ExamService', () => {
     describe('create', () => {
         it('should create and return a new exam', async () => {
             const person = await Person.create({ name: 'John Doe' });
@@ -18,19 +18,16 @@ describe('ExamRepository', () => {
                 programId: program._id,
                 aim: 'Financing',
                 amount: 1000,
-                audited: false,
-                completed: false,
+                audited: false
             };
 
-            const exam = await ExamRepository.create(payload);
-
+            const exam = await examService.createExam(payload);
             expect(exam).toBeDefined();
             expect(exam.personId).toEqual(person._id);
             expect(exam.programId).toEqual(program._id);
             expect(exam.aim).toBe('Financing');
             expect(exam.amount).toBe(1000);
             expect(exam.audited).toBe(false);
-            expect(exam.completed).toBe(false);
         });
     });
 
@@ -46,11 +43,10 @@ describe('ExamRepository', () => {
                 programId: program._id,
                 aim: 'Support',
                 amount: 500,
-                audited: true,
-                completed: true,
+                audited: true
             });
 
-            const result = await ExamRepository.getExamById(exam._id);
+            const result = await examService.getExamById(exam._id);
 
             expect(result).toBeDefined();
             expect(result.exam._id).toEqual(exam._id);
@@ -60,7 +56,7 @@ describe('ExamRepository', () => {
         });
 
         it('should throw an error if the exam does not exist', async () => {
-            await expect(ExamRepository.getExamById(new mongoose.Types.ObjectId())).rejects.toThrow('Exam not found');
+            await expect(examService.getExamById(new mongoose.Types.ObjectId())).rejects.toThrow('Exam not found');
         });
     });
 
@@ -72,7 +68,7 @@ describe('ExamRepository', () => {
 
             await Exam.create({ personId: person._id, programId: program._id, aim: 'Upgrading', amount: 2000 });
 
-            const exams = await ExamRepository.getExamByPersonId(person._id);
+            const exams = await examService.getExamByPersonId(person._id);
 
             expect(exams).toBeDefined();
             expect(exams.length).toBeGreaterThan(0);
@@ -80,7 +76,7 @@ describe('ExamRepository', () => {
         });
 
         it('should throw an error if the person does not exist', async () => {
-            await expect(ExamRepository.getExamByPersonId(new mongoose.Types.ObjectId())).rejects.toThrow("This person doesn't exist");
+            await expect(examService.getExamByPersonId(new mongoose.Types.ObjectId())).rejects.toThrow("This person doesn't exist");
         });
     });
 
@@ -90,7 +86,7 @@ describe('ExamRepository', () => {
             const person = await Person.create({ profil_id: new mongoose.Types.ObjectId() });
             const exam = await Exam.create({ personId: person._id, programId: program._id });
 
-            const profileId = await ExamRepository.getPersonProfileByExamId(exam._id);
+            const profileId = await examService.getPersonProfileByExamId(exam._id);
 
 
 
@@ -99,7 +95,7 @@ describe('ExamRepository', () => {
         });
 
         it('should throw an error if the exam or profile is not found', async () => {
-            await expect(ExamRepository.getPersonProfileByExamId(new mongoose.Types.ObjectId())).rejects.toThrow('Examen ou profil de la personne non trouvé');
+            await expect(examService.getPersonProfileByExamId(new mongoose.Types.ObjectId())).rejects.toThrow('Examen ou profil de la personne non trouvé');
         });
     });
 
@@ -110,7 +106,7 @@ describe('ExamRepository', () => {
             const person = await Person.create({});
             await Exam.create({ personId: person._id, programId: program._id });
 
-            const exams = await ExamRepository.getExamsByPersonAndInstitution(person._id, institution._id);
+            const exams = await examService.getExamsByPersonAndInstitution(person._id, institution._id);
 
             expect(exams).toBeDefined();
             expect(exams.length).toBeGreaterThan(0);
@@ -125,7 +121,7 @@ describe('ExamRepository', () => {
             const olderExam = await Exam.create({ personId: person._id, programId: program._id, createdAt: new Date('2023-01-01') });
             const latestExam = await Exam.create({ personId: person._id, programId: program._id });
 
-            const exam = await ExamRepository.getLatestExamByPersonAndInstitution(person._id, institution._id);
+            const exam = await examService.getLatestExamByPersonAndInstitution(person._id, institution._id);
 
             expect(exam).toBeDefined();
             expect(exam._id).toEqual(latestExam._id);
@@ -139,14 +135,14 @@ describe('ExamRepository', () => {
             const person = await Person.create({});
             const exam = await Exam.create({ personId: person._id, programId: program._id });
 
-            const result = await ExamRepository.getInstitutionByExamId(exam._id);
+            const result = await examService.getInstitutionByExamId(exam._id);
 
             expect(result).toBeDefined();
             expect(result._id).toEqual(institution._id);
         });
 
         it('should throw an error if the institution is not found', async () => {
-            await expect(ExamRepository.getInstitutionByExamId(new mongoose.Types.ObjectId())).rejects.toThrow('Institution non trouvée pour cet examen');
+            await expect(examService.getInstitutionByExamId(new mongoose.Types.ObjectId())).rejects.toThrow('Institution non trouvée pour cet examen');
         });
     });
 });

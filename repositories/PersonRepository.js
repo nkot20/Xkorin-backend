@@ -30,6 +30,15 @@ class PersonRepository {
             throw error;
         }
     }
+
+    async findById(id) {
+        try {
+            return await Person.findById(id);
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
 }
 
 const personRepository = new PersonRepository();

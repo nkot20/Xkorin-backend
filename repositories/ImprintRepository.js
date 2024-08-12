@@ -11,7 +11,7 @@ const PropositionTranslation = require("../models/PropositionTranslation");
 const Answer = require("../models/Answer");
 const Exam = require("../models/Exam");
 const Person = require("../models/Person");
-const examRepository = require("../repositories/ExamRepository");
+const examService = require("../services/ExamService");
 const subcategoryImprintRepository = require("../repositories/SubCategoryImprintRepository");
 const {ObjectId} = require("mongodb");
 const Helper = require("../common/Helper");
@@ -501,7 +501,7 @@ class ImprintRepository {
                 }
             });
 
-            const profilId = await examRepository.getPersonProfileByExamId(examId)
+            const profilId = await examService.getPersonProfileByExamId(examId)
             // Étape 3 : Récupérer toutes les questions et réponses en une seule requête
             const questions = await Question.find({ variableId: { $in: variables.map(v => v._id) }, weighting: false, profilId }).lean();
             const answers = await Answer.find({ questionId: { $in: questions.map(q => q._id) }, examId }).lean();
@@ -847,7 +847,7 @@ class ImprintRepository {
                 const exam = await Exam.findById(examId);
                 const person = await Person.findById(exam.personId);
                 await this.calculateImprintValue(imprint.id, examId).then(async (value) => {
-                    const institution = await examRepository.getInstitutionByExamId(examId);
+                    const institution = await examService.getInstitutionByExamId(examId);
 
                     const basePathGrades = './public/grades'
                     let gradeLogo = basePathGrades + '/1.PNG';
@@ -932,7 +932,7 @@ class ImprintRepository {
      */
     async getDatasForEachExam(institutionId, personId) {
         try {
-            const exams = await examRepository.getExamsByPersonAndInstitution(personId, institutionId);
+            const exams = await examService.getExamsByPersonAndInstitution(personId, institutionId);
             console.log(exams)
             const evolution = [];
             const indexValues = [];
@@ -955,8 +955,8 @@ class ImprintRepository {
 
             })
 
-            const latestExam = await examRepository.getLatestExamByPersonAndInstitution(personId, institutionId);
-            const examDetails = await examRepository.getExamById(latestExam._id);
+            const latestExam = await examService.getLatestExamByPersonAndInstitution(personId, institutionId);
+            const examDetails = await examService.getExamById(latestExam._id);
             const imprintValue = await this.getValueToEachImprint(latestExam._id);
             const variableTree = await this.buildVariableTree(latestExam._id);
             return {examDetails, evolution: {indexValues, imprintsData}, imprintValue, variableTree};

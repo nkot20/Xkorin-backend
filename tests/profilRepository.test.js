@@ -1,7 +1,7 @@
 const Profil = require('../models/Profil');
 const ProfilTranslation = require('../models/ProfilTranslation');
 const Language = require('../models/Language');
-const profilRepository = require('../repositories/ProfilRepository');
+const profilService = require('../services/ProfilService');
 
 jest.mock('../models/Profil');
 jest.mock('../models/ProfilTranslation');
@@ -26,7 +26,7 @@ describe('ProfilRepository', () => {
             Language.findOne.mockResolvedValue({ _id: '123' });
             ProfilTranslation.create.mockResolvedValue();
 
-            const result = await profilRepository.create(translations);
+            const result = await profilService.createProfilWithTranslations(translations);
 
             expect(Profil.create).toHaveBeenCalledWith({ label: 'English Label' });
             expect(ProfilTranslation.create).toHaveBeenCalledTimes(2);
@@ -37,7 +37,7 @@ describe('ProfilRepository', () => {
             const error = new Error('Creation failed');
             Profil.create.mockRejectedValue(error);
 
-            await expect(profilRepository.create([{ isoCode: 'en', label: 'Label' }])).rejects.toThrow('Creation failed');
+            await expect(profilService.createProfilWithTranslations([{ isoCode: 'en', label: 'Label' }])).rejects.toThrow('Creation failed');
         });
     });
 
@@ -50,7 +50,7 @@ describe('ProfilRepository', () => {
             Profil.find.mockResolvedValue(profils);
             ProfilTranslation.find.mockResolvedValue(translations);
 
-            const result = await profilRepository.getAll();
+            const result = await profilService.getAllProfilsWithTranslations();
             expect(Profil.find).toHaveBeenCalled();
             expect(ProfilTranslation.find).toHaveBeenCalled();
             expect(result).toEqual(expectedResponse);
@@ -60,7 +60,7 @@ describe('ProfilRepository', () => {
             const error = new Error('Fetching failed');
             Profil.find.mockRejectedValue(error);
 
-            await expect(profilRepository.getAll()).rejects.toThrow('Fetching failed');
+            await expect(profilService.getAllProfilsWithTranslations()).rejects.toThrow('Fetching failed');
         });
     });
 
@@ -75,7 +75,7 @@ describe('ProfilRepository', () => {
             Profil.find.mockResolvedValue(profils);
             ProfilTranslation.findOne.mockResolvedValue(profilTranslations[0]);
 
-            const result = await profilRepository.getAllByLanguage(isoCode);
+            const result = await profilService.getAllProfilsByLanguage(isoCode);
 
             expect(Language.findOne).toHaveBeenCalledWith({ isoCode });
             expect(Profil.find).toHaveBeenCalled();
@@ -87,7 +87,7 @@ describe('ProfilRepository', () => {
             const error = new Error('Fetching failed');
             Language.findOne.mockRejectedValue(error);
 
-            await expect(profilRepository.getAllByLanguage('en')).rejects.toThrow('Fetching failed');
+            await expect(profilService.getAllProfilsByLanguage('en')).rejects.toThrow('Fetching failed');
         });
     });
 
@@ -98,7 +98,7 @@ describe('ProfilRepository', () => {
 
             Profil.findById.mockResolvedValue(profil);
 
-            const result = await profilRepository.getProfilById(profilId);
+            const result = await profilService.getProfilById(profilId);
 
             expect(Profil.findById).toHaveBeenCalledWith(profilId);
             expect(result).toEqual(profil);
@@ -108,7 +108,7 @@ describe('ProfilRepository', () => {
             const error = new Error('Fetching failed');
             Profil.findById.mockRejectedValue(error);
 
-            await expect(profilRepository.getProfilById('1')).rejects.toThrow('Fetching failed');
+            await expect(profilService.getProfilById('1')).rejects.toThrow('Fetching failed');
         });
     });
 

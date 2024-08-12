@@ -1,11 +1,11 @@
 const Joi = require('joi');
 const express = require('express');
-const subCategoryRepository = require('../../../repositories/SubCategoryRepository');
+const subCategoryService = require('../../../services/SubCategoryService');
 const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
 const validateSchema = require("../../../middlewares/validationSchema");
-const subCategoryImprintRepository = require("../../../repositories/SubCategoryImprintRepository");
+const subCategoryImprintService = require("../../../services/SubCategoryImprintService");
 const asyncHandler = require('../../../middlewares/asyncHandler');
 
 /**
@@ -16,7 +16,7 @@ const asyncHandler = require('../../../middlewares/asyncHandler');
 router.post(
     '/',
     asyncHandler(async (req, res) => {
-        const response = await subCategoryRepository.create(req.body.subcategory, req.body.translation);
+        const response = await subCategoryService.createSubCategoryWithTranslations(req.body.subcategory, req.body.translation);
         res.status(201).json(response);
     })
 );
@@ -29,7 +29,7 @@ router.post(
 router.get(
     '/',
     asyncHandler(async (req, res) => {
-        const response = await subCategoryRepository.getAll();
+        const response = await subCategoryService.getAllSubCategoriesWithTranslations();
         res.status(200).json(response);
     })
 );
@@ -42,7 +42,7 @@ router.get(
 router.get(
     '/:categoryId/:isoCode',
     asyncHandler(async (req, res) => {
-        const response = await subCategoryRepository.getAllByLangageAndCategory(req.params.isoCode, req.params.categoryId);
+        const response = await subCategoryService.getAllSubCategoriesByLanguageAndCategory(req.params.isoCode, req.params.categoryId);
         res.status(200).json(response);
     })
 );
@@ -55,7 +55,7 @@ router.get(
 router.post(
     '/imprint/:subcategoryId',
     asyncHandler(async (req, res) => {
-        const response = await subCategoryImprintRepository.create(req.body.imprintId, req.params.subcategoryId);
+        const response = await subCategoryImprintService.createSubCategoryImprint(req.body.imprintId, req.params.subcategoryId);
         res.status(201).json(response);
     })
 );

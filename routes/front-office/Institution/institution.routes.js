@@ -2,7 +2,7 @@ const Joi = require('joi');
 const express = require('express');
 const router = express.Router();
 const asyncHandler = require('../../../middlewares/asyncHandler');
-const institutionRepository = require('../../../repositories/InstitutionRepository');
+const institutionService = require('../../../services/InstitutionService');
 const logger = require("../../../logger");
 
 /**
@@ -13,7 +13,7 @@ const logger = require("../../../logger");
 router.get(
     '/',
     asyncHandler(async (req, res) => {
-        const response = await institutionRepository.getAll();
+        const response = await institutionService.getAllInstitutions();
         return res.status(200).send(response);
     })
 );
@@ -30,7 +30,7 @@ router.get(
 router.get(
     '/type/:type',
     asyncHandler(async (req, res) => {
-        const response = await institutionRepository.getByType(req.params.type);
+        const response = await institutionService.getInstitutionsByType(req.params.type);
         return res.status(200).send(response);
     })
 );
@@ -46,7 +46,7 @@ router.get(
 router.patch(
     '/update-first-login/:institutionId/user/:userId',
     asyncHandler(async (req, res) => {
-        const response = await institutionRepository.updateAfterFirstInscription(req.params.userId, req.params.institutionId, req.body);
+        const response = await institutionService.updateAfterFirstInscription(req.params.userId, req.params.institutionId, req.body);
         return res.status(200).send(response);
     })
 );

@@ -1,7 +1,7 @@
 const Joi = require('joi');
 const express = require('express');
 const router = express.Router();
-const institutionRepository = require('../../../repositories/InstitutionRepository');
+const institutionService = require('../../../services/InstitutionService');
 const logger = require("../../../logger");
 const asyncHandler = require('../../../middlewares/asyncHandler');
 
@@ -9,7 +9,7 @@ const asyncHandler = require('../../../middlewares/asyncHandler');
 router.post(
     '/create',
     asyncHandler(async (req, res) => {
-        const response = await institutionRepository.create(req.body);
+        const response = await institutionService.createInstitution(req.body);
         res.status(200).json({ message: 'Institution saved successfully', response });
     })
 );
@@ -18,7 +18,7 @@ router.post(
 router.get(
     '/',
     asyncHandler(async (req, res) => {
-        const response = await institutionRepository.getAll();
+        const response = await institutionService.getAllInstitutions();
         res.status(200).send(response);
     })
 );

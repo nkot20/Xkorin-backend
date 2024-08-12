@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
-const companyRepository = require('../repositories/CompanyRepository');
+const companyService = require('../services/CompanyService');
 const Company = require('../models/Company');
 const request = require('supertest');
 let mongoServer;
@@ -17,7 +17,7 @@ describe('CompanyRepository', () => {
 
             await mockCompany.save();
 
-            const company = await companyRepository.getCompany(mockCompany._id);
+            const company = await companyService.getCompanyById(mockCompany._id);
 
             expect(company).toBeDefined();
             expect(company.name).toBe('Test Company');
@@ -25,9 +25,9 @@ describe('CompanyRepository', () => {
         });
 
         it('should return null if the company does not exist', async () => {
-            const company = await companyRepository.getCompany(mongoose.Types.ObjectId());
-
-            expect(company).toBeNull();
+            await expect(companyService.getCompanyById(mongoose.Types.ObjectId()))
+                .rejects
+                .toThrow('Company not found');
         });
     });
 
@@ -39,7 +39,7 @@ describe('CompanyRepository', () => {
                 status: 'Active',
             };
 
-            const newCompany = await companyRepository.createCompany(data);
+            const newCompany = await companyService.createCompany(data);
 
             expect(newCompany).toBeDefined();
             expect(newCompany.name).toBe('New Company');
@@ -63,7 +63,7 @@ describe('CompanyRepository', () => {
                 page: 1,
             };
 
-            const companies = await companyRepository.getAll(options);
+            const companies = await companyService.getAllCompanies(options);
             expect(companies).toBeDefined();
             expect(companies.docs.length).toBe(2);
         });
@@ -81,7 +81,7 @@ describe('CompanyRepository', () => {
             await mockCompany.save();
 
             const updatedData = { name: 'Updated Company Name' };
-            const updatedCompany = await companyRepository.updateCompany(mockCompany._id, updatedData);
+            const updatedCompany = await companyService.updateCompany(mockCompany._id, updatedData);
 
             expect(updatedCompany).toBeDefined();
             expect(updatedCompany.name).toBe('Updated Company Name');

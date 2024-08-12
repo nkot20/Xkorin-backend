@@ -8,7 +8,7 @@ const Language = require('../models/Language');
 const VariableTranslation = require('../models/VariableTranslation');
 const QuestionTranslation = require('../models/QuestionTranslation');
 const ExamState = require('../models/ExamState');
-const subCategoryImprintRepository = require('../repositories/SubCategoryImprintRepository');
+const subCategoryImprintService = require('../services/SubCategoryImprintService');
 
 
 describe('ImprintRepository', () => {
@@ -63,7 +63,7 @@ describe('ImprintRepository', () => {
             const language = await Language.create({ isoCode: 'en', label: 'English' });
             const variable = await Variable.create({ name: 'Root Variable', imprintId: imprint._id });
 
-            jest.spyOn(subCategoryImprintRepository, 'getImprintIdBySubcategoryId').mockResolvedValue([imprint._id.toString()]);
+            jest.spyOn(subCategoryImprintService, 'getImprintIdBySubcategoryId').mockResolvedValue([imprint._id.toString()]);
 
             const result = await imprintRepository.getVariablesForImprints(imprint._id.toString(), language.isoCode, '123');
             const receiveValues = [
@@ -85,7 +85,7 @@ describe('ImprintRepository', () => {
         });
 
         it('should throw an error if fetching fails', async () => {
-            jest.spyOn(subCategoryImprintRepository, 'getImprintIdBySubcategoryId').mockRejectedValue(new Error('Fetch failed'));
+            jest.spyOn(subCategoryImprintService, 'getImprintIdBySubcategoryId').mockRejectedValue(new Error('Fetch failed'));
 
             await expect(imprintRepository.getVariablesForImprints('1', 'en', '123')).rejects.toThrow('An error occurred while fetching the variables.');
         });
@@ -98,7 +98,7 @@ describe('ImprintRepository', () => {
             const variable = await Variable.create({ name: 'Root Variable', imprintId: imprint._id });
             const childVariable = await Variable.create({ name: 'Child Variable', parent: variable._id });
 
-            jest.spyOn(subCategoryImprintRepository, 'getImprintIdBySubcategoryId').mockResolvedValue([imprint._id.toString()]);
+            jest.spyOn(subCategoryImprintService, 'getImprintIdBySubcategoryId').mockResolvedValue([imprint._id.toString()]);
             jest.spyOn(ExamState, 'findOne').mockResolvedValue(null); // Variable is not evaluated
 
             const result = await imprintRepository.getRemainingVariablesForImprints(imprint._id.toString(), language.isoCode, '123', 'exam1');
@@ -122,7 +122,7 @@ describe('ImprintRepository', () => {
         });
 
         it('should throw an error if fetching fails', async () => {
-            jest.spyOn(subCategoryImprintRepository, 'getImprintIdBySubcategoryId').mockRejectedValue(new Error('An error occurred while fetching the remaining variables.'));
+            jest.spyOn(subCategoryImprintService, 'getImprintIdBySubcategoryId').mockRejectedValue(new Error('An error occurred while fetching the remaining variables.'));
 
             await expect(imprintRepository.getRemainingVariablesForImprints('1', 'en', '123', 'exam1')).rejects.toThrow('An error occurred while fetching the remaining variables.');
         });

@@ -1,6 +1,6 @@
 const Joi = require('joi');
 const express = require('express');
-const examRepository = require('../../../repositories/ExamRepository');
+const examService = require('../../../services/ExamService');
 const imprintRepository = require('../../../repositories/ImprintRepository');
 const router = express.Router();
 const logger = require('../../../logger');
@@ -31,7 +31,7 @@ router.post(
             amount: req.body.amount,
             programId: req.body.programId
         };
-        const response = await examRepository.create(exam);
+        const response = await examService.createExam(exam);
         res.status(201).send(response);
     })
 );
@@ -45,7 +45,7 @@ router.post(
 router.get(
     '/:personId',
     asyncHandler(async (req, res) => {
-        const exams = await examRepository.getExamByPersonId(req.params.personId);
+        const exams = await examService.getExamByPersonId(req.params.personId);
         let response = [];
 
         await Promise.all(
@@ -67,7 +67,7 @@ router.get(
 router.get(
     '/details/:examId',
     asyncHandler(async (req, res) => {
-        const response = await examRepository.getExamById(req.params.examId);
+        const response = await examService.getExamById(req.params.examId);
         res.status(200).send(response);
     })
 );

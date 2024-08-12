@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
-const ImprintInstitutionRepository = require('../repositories/ImprintInstitutionRepository');
+const ImprintInstitutionService = require('../services/ImprintInstitutionService');
 const ImprintInstitution = require('../models/ImprintInstitution');
 const Imprint = require('../models/Imprint');
 
-describe('ImprintInstitutionRepository', () => {
+describe('ImprintInstitutionService', () => {
     describe('create', () => {
         it('should create and return a new imprint institution relation', async () => {
             const payload = {
@@ -13,7 +13,7 @@ describe('ImprintInstitutionRepository', () => {
                 isAddedForAnInstitution: true
             };
 
-            const imprintInstitution = await ImprintInstitutionRepository.create(payload);
+            const imprintInstitution = await ImprintInstitutionService.create(payload);
 
             expect(imprintInstitution).toBeDefined();
             expect(imprintInstitution.imprintId).toEqual(payload.imprintId);
@@ -45,7 +45,7 @@ describe('ImprintInstitutionRepository', () => {
                 isAddedForAnInstitution: true
             });
 
-            const imprints = await ImprintInstitutionRepository.getImprintsByInstitution(institutionId);
+            const imprints = await ImprintInstitutionService.getImprintsByInstitution(institutionId);
 
             expect(imprints).toBeDefined();
             expect(imprints.length).toBe(3);
@@ -61,7 +61,7 @@ describe('ImprintInstitutionRepository', () => {
 
             const imprint1 = await Imprint.create({ name: 'Imprint 1' });
 
-            const imprints = await ImprintInstitutionRepository.getImprintsByInstitution(institutionId);
+            const imprints = await ImprintInstitutionService.getImprintsByInstitution(institutionId);
 
             expect(imprints).toBeDefined();
             expect(imprints.length).toBe(1);
@@ -70,7 +70,7 @@ describe('ImprintInstitutionRepository', () => {
         });
 
         it('should throw an error if the institutionId is invalid', async () => {
-            await expect(ImprintInstitutionRepository.getImprintsByInstitution('invalidId')).rejects.toThrow();
+            await expect(ImprintInstitutionService.getImprintsByInstitution('invalidId')).rejects.toThrow();
         });
     });
 });

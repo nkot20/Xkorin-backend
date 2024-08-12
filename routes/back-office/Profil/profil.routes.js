@@ -1,6 +1,6 @@
 const Joi = require('joi');
 const express = require('express');
-const profilRepository = require('../../../repositories/ProfilRepository');
+const profilService = require('../../../services/ProfilService');
 const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
@@ -16,7 +16,7 @@ router.post(
     '/',
     validateSchema(profilCreateSchema),
     asyncHandler(async (req, res) => {
-        const profil = await profilRepository.create(req.body.translations);
+        const profil = await profilService.createProfilWithTranslations(req.body.translations);
         res.status(200).json({ message: 'Profil saved successfully', profil });
     })
 );
@@ -25,7 +25,7 @@ router.post(
 router.get(
     '/',
     asyncHandler(async (req, res) => {
-        const profils = await profilRepository.getAll();
+        const profils = await profilService.getAllProfilsWithTranslations();
         res.status(200).send(profils);
     })
 );

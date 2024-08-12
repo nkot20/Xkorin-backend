@@ -1,13 +1,13 @@
 const mongoose = require('mongoose');
-const InstitutionRepository = require('../repositories/InstitutionRepository');
+const InstitutionService = require('../services/InstitutionService');
 const Institution = require('../models/Institution');
 const userRepository = require('../repositories/UserRepository');
-const programRepository = require('../repositories/ProgramRepository');
+const programService = require('../services/ProgramService');
 
 jest.mock('../repositories/UserRepository');
-jest.mock('../repositories/ProgramRepository');
+jest.mock('../services/ProgramService');
 
-describe('InstitutionRepository', () => {
+describe('InstitutionService', () => {
     describe('create', () => {
         it('should create and return a new institution', async () => {
             const payload = {
@@ -17,7 +17,7 @@ describe('InstitutionRepository', () => {
                 type: 'Support'
             };
 
-            const institution = await InstitutionRepository.create(payload);
+            const institution = await InstitutionService.createInstitution(payload);
 
             expect(institution).toBeDefined();
             expect(institution.name).toBe(payload.name);
@@ -35,7 +35,7 @@ describe('InstitutionRepository', () => {
 
             await Institution.create(payload);
 
-            await expect(InstitutionRepository.create(payload)).rejects.toThrow('Institution is already exist');
+            await expect(InstitutionService.createInstitution(payload)).rejects.toThrow('Institution is already exist');
         });
     });
 
@@ -54,7 +54,7 @@ describe('InstitutionRepository', () => {
                 status: 'Active'
             };
 
-            const updatedInstitution = await InstitutionRepository.update(institution._id, updatePayload);
+            const updatedInstitution = await InstitutionService.updateInstitution(institution._id, updatePayload);
 
             expect(updatedInstitution).toBeDefined();
             const fetchedInstitution = await Institution.findById(institution._id);
@@ -88,9 +88,9 @@ describe('InstitutionRepository', () => {
             };
 
             const mockProgram = { _id: new mongoose.Types.ObjectId() };
-            programRepository.create.mockResolvedValue(mockProgram);
+            programService.create.mockResolvedValue(mockProgram);
 
-            const updatedInstitution = await InstitutionRepository.updateAfterFirstInscription(userId, institution._id, updatePayload);
+            const updatedInstitution = await InstitutionService.updateAfterFirstInscription(userId, institution._id, updatePayload);
 
             expect(updatedInstitution).toBeDefined();
 
@@ -99,7 +99,7 @@ describe('InstitutionRepository', () => {
             expect(fetchedInstitution.email).toBe(updatePayload.institution.email);
             expect(fetchedInstitution.status).toBe(updatePayload.institution.status);
 
-            expect(programRepository.create).toHaveBeenCalledWith({
+            expect(programService.create).toHaveBeenCalledWith({
                 institutionId: institution._id,
                 name: updatePayload.program.name,
                 targetInstitutionId: updatePayload.program.targetInstitutionId
@@ -114,7 +114,7 @@ describe('InstitutionRepository', () => {
             await Institution.create({ name: 'Institution 1', status: 'Active', type: 'Support' });
             await Institution.create({ name: 'Institution 2', status: 'Inactive', type: 'Financing' });
 
-            const institutions = await InstitutionRepository.getAll();
+            const institutions = await InstitutionService.getAllInstitutions();
 
             expect(institutions).toBeDefined();
             expect(institutions.length).toBe(2);
@@ -126,7 +126,7 @@ describe('InstitutionRepository', () => {
             const name = 'Test Institution';
             await Institution.create({ name, status: 'Active', type: 'Support' });
 
-            const institution = await InstitutionRepository.getByName(name);
+            const institution = await InstitutionService.getInstitutionByName(name);
 
             expect(institution).toBeDefined();
             expect(institution.name).toBe(name);
@@ -138,7 +138,7 @@ describe('InstitutionRepository', () => {
             await Institution.create({ name: 'Institution 1', type: 'Support', status: 'Active' });
             await Institution.create({ name: 'Institution 2', type: 'Support', status: 'Inactive' });
 
-            const institutions = await InstitutionRepository.getByType('Support');
+            const institutions = await InstitutionService.getInstitutionsByType('Support');
 
             expect(institutions).toBeDefined();
             expect(institutions.length).toBe(2);
@@ -149,7 +149,7 @@ describe('InstitutionRepository', () => {
         it('should return an institution by ID', async () => {
             const institution = await Institution.create({ name: 'Institution by ID', status: 'Active', type: 'Support' });
 
-            const fetchedInstitution = await InstitutionRepository.getById(institution._id);
+            const fetchedInstitution = await InstitutionService.getInstitutionById(institution._id);
 
             expect(fetchedInstitution).toBeDefined();
             expect(fetchedInstitution.name).toBe(institution.name);
@@ -161,7 +161,7 @@ describe('InstitutionRepository', () => {
             const adminId = new mongoose.Types.ObjectId();
             await Institution.create({ name: 'Institution by Admin', adminId, status: 'Active', type: 'Support' });
 
-            const institution = await InstitutionRepository.getByAdminId(adminId);
+            const institution = await InstitutionService.getInstitutionByAdminId(adminId);
 
             expect(institution).toBeDefined();
             expect(institution.adminId.toString()).toBe(adminId.toString());

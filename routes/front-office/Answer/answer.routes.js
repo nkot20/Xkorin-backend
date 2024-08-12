@@ -1,6 +1,6 @@
 const Joi = require('joi');
 const express = require('express');
-const answerRepository = require('../../../repositories/AnswerRepository');
+const answerService = require('../../../services/AnswerService');
 const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
@@ -25,7 +25,7 @@ router.post(
     '/create',
     validateSchema(schemaAnswer),
     asyncHandler(async (req, res) => {
-        const response = await answerRepository.create(req.body);
+        const response = await answerService.create(req.body);
         res.status(201).send(response);
     })
 );

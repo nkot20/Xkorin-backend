@@ -1,7 +1,6 @@
 const Joi = require('joi');
 const express = require('express');
 const imprintRepository = require('../../../repositories/ImprintRepository');
-const variableRepository = require('../../../repositories/VariableRepository');
 const validateSchema = require('../../../middlewares/validationSchema');
 const router = express.Router();
 const logger = require('../../../logger');

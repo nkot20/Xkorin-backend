@@ -1,3 +1,4 @@
+/*
 const Usager = require('../models/Usager');
 const calculPointRepository = require('../repositories/CaculPointRepository');
 const Answer = require('../models/Answer');
@@ -109,4 +110,4 @@ class UsagerRepository {
 }
 
 const usagerRepository = new UsagerRepository();
-module.exports = usagerRepository;
+module.exports = usagerRepository;*/

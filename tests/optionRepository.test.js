@@ -1,7 +1,7 @@
 const Option = require('../models/Option');
 const Language = require('../models/Language');
 const OptionTranslation = require('../models/OptionTranslation');
-const optionRepository = require('../repositories/OptionRepository');
+const optionService = require('../services/OptionService');
 
 // Mock the models
 jest.mock('../models/Option');
@@ -31,7 +31,7 @@ describe('OptionRepository', () => {
                 .mockResolvedValueOnce(frenchLanguage);
             OptionTranslation.create.mockResolvedValue({});
 
-            const result = await optionRepository.create(payload, translations);
+            const result = await optionService.createOption(payload, translations);
 
             expect(Option.create).toHaveBeenCalledWith({
                 label: 'Option English',
@@ -66,7 +66,7 @@ describe('OptionRepository', () => {
             const error = new Error('Creation failed');
             Option.create.mockRejectedValue(error);
 
-            await expect(optionRepository.create(payload, translations)).rejects.toThrow('Creation failed');
+            await expect(optionService.createOption(payload, translations)).rejects.toThrow('Creation failed');
         });
     });
 
@@ -89,7 +89,7 @@ describe('OptionRepository', () => {
                 .mockResolvedValueOnce(optionTranslation1)
                 .mockResolvedValueOnce(optionTranslation2);
 
-            const result = await optionRepository.getAllByIsoCodeLanguage('en');
+            const result = await optionService.getAllOptionsByLanguage('en');
 
             expect(Option.find).toHaveBeenCalled();
             expect(mockSort).toHaveBeenCalledWith({ createdAt: -1 });
@@ -115,7 +115,7 @@ describe('OptionRepository', () => {
             const mockSort = jest.fn().mockRejectedValue(error);
             Option.find.mockReturnValue({ sort: mockSort });
 
-            await expect(optionRepository.getAllByIsoCodeLanguage('en')).rejects.toThrow('Fetch failed');
+            await expect(optionService.getAllOptionsByLanguage('en')).rejects.toThrow('Fetch failed');
         });
     });
 });
