@@ -10,7 +10,7 @@ class ProgramService {
         try {
             const program = await programRepository.findOneByName(payload.name);
 
-            if (payload.targetInstitutionId === "nothing") {
+            if (payload.targetInstitutionId === "Nothing") {
                 const institution = await institutionService.getInstitutionByName(INSTITUTIONNAME.NAME);
                 payload.targetInstitutionId = institution._id;
             }
@@ -66,9 +66,18 @@ class ProgramService {
 
     async listProgramsByInstitution(institutionId, options) {
         try {
+            const searchRegex = new RegExp(options.search, 'i');
             const aggregatePipeline = [
                 {
                     $match: { institutionId: mongoose.Types.ObjectId(institutionId) }
+                },
+                {
+                    $match: {
+                        $or: [
+                            { name: { $regex: searchRegex } },
+                            { targetName: { $regex: searchRegex } },
+                        ],
+                    },
                 },
                 {
                     $lookup: {
@@ -94,16 +103,6 @@ class ProgramService {
                     }
                 }
             ];
-
-            const searchRegex = new RegExp(options.search, 'i');
-            aggregatePipeline.push({
-                $match: {
-                    $or: [
-                        { name: { $regex: searchRegex } },
-                        { targetName: { $regex: searchRegex } },
-                    ],
-                },
-            });
 
             return await programRepository.aggregatePaginate(aggregatePipeline, options);
         } catch (error) {

@@ -72,4 +72,30 @@ router.get(
     })
 );
 
+/**
+ * @route GET /all/
+ * @desc Get all exams
+ * @access Public
+ */
+router.get(
+    '/all/exams',
+    asyncHandler(async (req, res) => {
+        const response = await examService.getAllExams();
+        res.status(200).send(response);
+    })
+);
+
+/**
+ * @route GET /all/
+ * @desc Get all exams that concerne an institution
+ * @access Public
+ */
+router.get(
+    '/all/:institutionId',
+    asyncHandler(async (req, res) => {
+        const response = await examService.getExamByInstitution(req.params.institutionId);
+        res.status(200).send(response);
+    })
+);
+
 module.exports = router;

@@ -15,7 +15,7 @@ describe('ImprintRepository', () => {
     describe('createFootprint', () => {
         it('should create a new imprint and return it', async () => {
             const datas = { name: 'Test Imprint' };
-            const result = await imprintRepository.createFootprint(datas);
+            const result = await imprintRepository.createImprint(datas);
             expect(result).toHaveProperty('_id');
             expect(result.name).toBe('Test Imprint');
         });
@@ -26,7 +26,7 @@ describe('ImprintRepository', () => {
             });
 
             const datas = { name: 'Test Imprint' };
-            await expect(imprintRepository.createFootprint(datas)).rejects.toThrow('Creation failed');
+            await expect(imprintRepository.createImprint(datas)).rejects.toThrow('Creation failed');
         });
     });
 

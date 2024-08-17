@@ -18,8 +18,9 @@ const examSchema = Schema({
         type: Boolean,
         default: false,
     },
+    createdAt: { type: Date, default: Date.now }
 
-}, { timestamps: true });
+});
 
 // Function to generate a random alphanumeric string of a given length
 

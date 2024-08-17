@@ -63,6 +63,14 @@ class InstitutionRepository {
             throw error;
         }
     }
+
+    async findByStatus(status) {
+        try {
+            return await Institution.find({status});
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 module.exports = new InstitutionRepository();

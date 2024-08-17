@@ -12,6 +12,7 @@ const Answer = require("../models/Answer");
 const Exam = require("../models/Exam");
 const Person = require("../models/Person");
 const examService = require("../services/ExamService");
+const companyService = require("../services/CompanyService");
 const subcategoryImprintRepository = require("../repositories/SubCategoryImprintRepository");
 const {ObjectId} = require("mongodb");
 const Helper = require("../common/Helper");
@@ -21,13 +22,24 @@ const Examen = require("../models/Exam");
 const Institution = require("../models/Institution");
 const Company = require("../models/Company");
 const ExamState = require('../models/ExamState');
+const imprintInstitutionRepository = require('../repositories/ImprintInstitutionRepository');
 
 
 
 class ImprintRepository {
-    async createFootprint(datas) {
+    async createImprint(datas) {
         try {
-            return await Imprint.create(datas)
+            const imprint = await Imprint.create(datas);
+            if(datas.isAddedForAnInstitution) {
+                const imprintInstitution = {
+                    imprintId: imprint._id,
+                    institutionId: datas.institutionId,
+                    status: 'Able',
+                    isAddedForAnInstitution: true
+                };
+                await imprintInstitutionRepository.create(imprintInstitution);
+            }
+            return imprint;
         } catch (error) {
             console.error("Erreur lors de la création de l'empreinte:", error);
             throw error;
@@ -100,7 +112,7 @@ class ImprintRepository {
     async getVariablesForImprints(subcategoryId, isoCode, profilId) {
         try {
             // Trouver les imprintIds d'une sous catégorie
-            let imprintIds = await subcategoryImprintRepository.getImprintIdBySubcategoryId(subcategoryId);
+            let imprintIds = await subcategoryImprintRepository.findImprintIdsBySubcategoryId(subcategoryId);
 
             // Trouver l'ID de la langue
             const language = await Language.findOne({ isoCode });
@@ -210,7 +222,7 @@ class ImprintRepository {
     async getRemainingVariablesForImprints(subcategoryId, isoCode, profilId, examId) {
         try {
             // Retrieve imprint IDs for the given subcategory
-            const imprintIds = await subcategoryImprintRepository.getImprintIdBySubcategoryId(subcategoryId);
+            const imprintIds = await subcategoryImprintRepository.findImprintIdsBySubcategoryId(subcategoryId);
 
             // Get the language ID using the provided ISO code
             const language = await Language.findOne({ isoCode });
@@ -556,8 +568,8 @@ class ImprintRepository {
             // Retourner les variables racines avec uniquement leurs feuilles
             if (variablesResponse.length > 0) {
                 Helper.exportDashboardExamAsPdf({
-                    date: this.formatDate(new Date()),
-                    dateExpiration: this.formatDate(this.addYearsToDate(new Date(), 1)),
+                    date: Helper.formatDate(new Date()),
+                    dateExpiration: Helper.formatDate(Helper.addYearsToDate(new Date(), 1)),
                     imprintName: imprint.name + ' imprint',
                     variables: variablesResponse,
                     //diamantlogo: this.imageFileToBase64('./public/logos/diamant_logo.jpg'),
@@ -778,6 +790,7 @@ class ImprintRepository {
 
             await Promise.all(imprints.map(async (imprint) => {
                 const exam = await Exam.findById(examId);
+                console.log('Exam find out/////////////////////////////////////////////////////', exam,)
                 const person = await Person.findById(exam.personId);
                 await this.calculateImprintValue(imprint.id, examId).then(value => {
                    /*  Helper.generateQrCode({
@@ -867,20 +880,20 @@ class ImprintRepository {
                         gradeLogo = basePathGrades + '/7.PNG';
                     console.log(gradeLogo, value)
                     Helper.exportCertificatExamAsPdf({
-                     date: this.formatDate(new Date()),
-                     dateExpiration: this.formatDate(this.addYearsToDate(new Date(),1)),
+                     date: Helper.formatDate(new Date()),
+                     dateExpiration: Helper.formatDate(Helper.addYearsToDate(new Date(),1)),
                      lastname: person.name,
                      firstname: '',
                      formation: imprint.name + ' imprint',
                      points: value,
-                     qrcode: this.imageFileToBase64('./public/qrcode/'+ imprint.name + '_' +examId+'_'+person._id+'.png'),
+                     qrcode: Helper.imageFileToBase64('./public/qrcode/'+ imprint.name + '_' +examId+'_'+person._id+'.png'),
                      logoentetegauche: institution.customization.logo,
-                     logoentetedroit: this.imageFileToBase64('./public/logos/wellbin.PNG'),
-                     diamantlogo: this.imageFileToBase64(gradeLogo),
-                     humanbetlogo: this.imageFileToBase64('./public/logos/humanbet_logo.jpg'),
-                     mmlogo: this.imageFileToBase64('./public/logos/mm_logo.jpg'),
-                     signature1: this.imageFileToBase64('./public/logos/signaturebossou.PNG'),
-                     signature2: this.imageFileToBase64('./public/logos/signaturemondo.PNG'),
+                     logoentetedroit: Helper.imageFileToBase64('./public/logos/wellbin.PNG'),
+                     diamantlogo: Helper.imageFileToBase64(gradeLogo),
+                     humanbetlogo: Helper.imageFileToBase64('./public/logos/humanbet_logo.jpg'),
+                     mmlogo: Helper.imageFileToBase64('./public/logos/mm_logo.jpg'),
+                     signature1: Helper.imageFileToBase64('./public/logos/signaturebossou.PNG'),
+                     signature2: Helper.imageFileToBase64('./public/logos/signaturemondo.PNG'),
                     }, examId, imprint.name, person._id)
 
                     response.push({imprint, value});
@@ -930,9 +943,10 @@ class ImprintRepository {
      * @param personId
      * @returns {Promise<{examDetails: {exam: Query<Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, unknown, any>, institution: Query<Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, unknown, any>, person: Query<Document<unknown, any, InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>>> & Omit<InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>> & {_id: Types.ObjectId}, never> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TVirtuals"> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TInstanceMethods">, Document<unknown, any, InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>>> & Omit<InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>> & {_id: Types.ObjectId}, never> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TVirtuals"> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TInstanceMethods">, ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TQueryHelpers">, InferSchemaType<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>>> & ObtainSchemaGeneric<module:mongoose.Schema<any, Model<any, any, any, any>, {}, {}, {}, {}, {timestamps: boolean}, {birthdate: {type: Date | DateConstructor, required: boolean}, role: {type: String | StringConstructor}, company_id: [{ref: string, type: ObjectId}], gender: {type: String | StringConstructor}, level_of_education: {type: String | StringConstructor, enum}, mobile_no: {type: String | StringConstructor, required: boolean}, profil_id: [{ref: string, type: ObjectId}], matrimonial_status: {type: String | StringConstructor, enum: string[]}, subcategory_id: [{ref: string, type: ObjectId}], user_id: [{ref: string, type: ObjectId}], name: {type: String | StringConstructor}, created_date: {default: *|number, type: Date | DateConstructor}, updated_date: {default: *|number, type: Date | DateConstructor}, email: {type: String | StringConstructor, required: boolean}}>, "TQueryHelpers">, company: Query<Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, Document<unknown, any, unknown> & Omit<unknown extends {_id?: infer U} ? IfAny<U, {_id: Types.ObjectId}, Required<{_id: U}>> : {_id: Types.ObjectId}, never> & {}, unknown, any>}, imprintValue: *[], evolution: {indexValues: *[], imprintsData: *[]}, variableTree: *[]}>}
      */
-    async getDatasForEachExam(institutionId, personId) {
+    async getDatasForEachExamOfInstitution(institutionId, personId) {
         try {
             const exams = await examService.getExamsByPersonAndInstitution(personId, institutionId);
+            const companyInfos = await companyService.getCompanyByPersonId(personId)
             console.log(exams)
             const evolution = [];
             const indexValues = [];
@@ -940,8 +954,45 @@ class ImprintRepository {
             await Promise.all(exams.map(async (value) => {
                 let imprints = await this.getValueToEachImprint(value._id);
                 const cii = imprints.reduce((sum, value) => sum + value, 0);
-                indexValues.push({date: this.formatDate(value.createdAt), value: cii})
-                evolution.push({imprints, date: this.formatDate(value.createdAt)})
+                indexValues.push({date: Helper.formatDate(value.createdAt), value: cii})
+                evolution.push({imprints, date: Helper.formatDate(value.createdAt)})
+            }));
+            let i = 0;
+            evolution.forEach(item => {
+                item.imprints.forEach((imprint, index) => {
+                    if (!imprintsData[index]) {
+                        imprintsData[index] = [];
+                    }
+                    imprintsData[index].push({date: item.date, value: imprint});
+                });
+
+
+            })
+            console.log(personId, institutionId)
+            const latestExam = await examService.getLatestExamByPersonAndInstitution(personId, institutionId);
+            const examDetails = await examService.getExamById(latestExam._id);
+            examDetails.company = companyInfos.name;
+            const imprintValue = await this.getValueToEachImprint(latestExam._id);
+            const variableTree = await this.buildVariableTree(latestExam._id);
+            return {examDetails, evolution: {indexValues, imprintsData}, imprintValue, variableTree, company: companyInfos};
+        } catch (error) {
+            console.log(error)
+            throw error;
+        }
+    }
+
+    async getDatasForEachExamOfPerson(personId) {
+        try {
+            const exams = await examService.getExamByPersonId(personId);
+            console.log('//////////////////////////////////////////////////////////////',exams)
+            const evolution = [];
+            const indexValues = [];
+            let imprintsData = [];
+            await Promise.all(exams.map(async (value) => {
+                let imprints = await this.getValueToEachImprint(value.exam._id);
+                const cii = imprints.reduce((sum, value) => sum + value, 0);
+                indexValues.push({date: Helper.formatDate(value.exam.createdAt), value: cii})
+                evolution.push({imprints, date: Helper.formatDate(value.exam.createdAt)})
             }));
             let i = 0;
             evolution.forEach(item => {
@@ -955,7 +1006,7 @@ class ImprintRepository {
 
             })
 
-            const latestExam = await examService.getLatestExamByPersonAndInstitution(personId, institutionId);
+            const latestExam = await examService.getLatestExam(personId);
             const examDetails = await examService.getExamById(latestExam._id);
             const imprintValue = await this.getValueToEachImprint(latestExam._id);
             const variableTree = await this.buildVariableTree(latestExam._id);
@@ -977,21 +1028,21 @@ class ImprintRepository {
         }
     }
 
-
+/*
     formatDate(date) {
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const year = date.getFullYear();
         return `${day}/${month}/${year}`;
-    }
+    }*/
 
-    addYearsToDate(date, yearsToAdd) {
+  /*  addYearsToDate(date, yearsToAdd) {
         const newDate = new Date(date); // Crée une copie de la date d'origine
         newDate.setFullYear(newDate.getFullYear() + yearsToAdd); // Ajoute le nombre d'années spécifié
         return newDate;
-    }
+    }*/
 
-    imageFileToBase64(filePath) {
+    /*imageFileToBase64(filePath) {
         try {
             // Lire le fichier image depuis le chemin relatif
             const imageData = fs.readFileSync(filePath);
@@ -1002,7 +1053,7 @@ class ImprintRepository {
             console.error('Erreur lors de la conversion de l\'image en base64 :', error.message);
             return null;
         }
-    }
+    }*/
 }
 
 

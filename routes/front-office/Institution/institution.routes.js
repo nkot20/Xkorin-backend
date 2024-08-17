@@ -13,7 +13,7 @@ const logger = require("../../../logger");
 router.get(
     '/',
     asyncHandler(async (req, res) => {
-        const response = await institutionService.getAllInstitutions();
+        const response = await institutionService.getAllInstitutionsByStatuts("Active");
         return res.status(200).send(response);
     })
 );

@@ -67,6 +67,14 @@ class CompanyService {
         }
     }
 
+    async getCompanyByPersonId(id) {
+        try {
+            return await CompanyRepository.getCompanyInfosOfPersonId(id);
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async getCompaniesAndAdminsByInstitutionId(institutionId, page, limit, sort, order) {
         try {
             const companies = await CompanyRepository.getCompaniesAndAdminsByInstitutionId(institutionId);

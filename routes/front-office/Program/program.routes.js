@@ -89,6 +89,7 @@ router.get(
             sortBy: req.query.sort || 'createdAt',
         };
         const response = await programService.listProgramsByInstitution(req.params.institutionId, options);
+        console.log(response)
         const pagination = {
             hasNextPage: response.hasNextPage,
             hasPrevPage: response.hasPrevPage,

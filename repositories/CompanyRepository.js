@@ -1,4 +1,5 @@
 const Company = require('../models/Company');
+const Person = require('../models/Person');
 
 class CompanyRepository {
   async getAll(options) {
@@ -153,6 +154,17 @@ class CompanyRepository {
       });
 
       return await Company.aggregatePaginate(aggregate, options);
+    } catch (err) {
+      console.error('Error fetching companies and admins:', err);
+      throw err;
+    }
+  }
+
+  async getCompanyInfosOfPersonId(personId) {
+    try {
+      const person = await Person.findOne({ _id: personId }).select('company_id');
+      const companyId = person.company_id;
+      return await Company.findById(companyId);
     } catch (err) {
       console.error('Error fetching companies and admins:', err);
       throw err;

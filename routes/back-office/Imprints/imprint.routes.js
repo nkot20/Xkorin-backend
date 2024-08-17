@@ -6,19 +6,21 @@ const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
 const asyncHandler = require('../../../middlewares/asyncHandler');
-const footprintCreateSchema = Joi.object({
+const imprintCreateSchema = Joi.object({
     name: Joi.string().required(),
     color: Joi.string().required(),
+    isAddedForAnInstitution: Joi.boolean().required(),
+    institutionId: Joi.string(),
 });
 
 
 // Création d'un nouvel imprint
 router.post(
     '/',
-    validateSchema(footprintCreateSchema),
+    validateSchema(imprintCreateSchema),
     asyncHandler(async (req, res) => {
-        const footprint = await imprintRepository.createFootprint(req.body);
-        res.status(200).json({ message: 'Imprint saved successfully', footprint });
+        const imprint = await imprintRepository.createImprint(req.body);
+        res.status(200).json({ message: 'Imprint saved successfully', imprint });
     })
 );
 

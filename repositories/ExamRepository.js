@@ -16,6 +16,11 @@ class ExamRepository {
         return await Exam.findById(id).exec();
     }
 
+    async findAll() {
+        return await Exam.find().exec();
+    }
+
+
     async findByPersonId(personId) {
         return await Exam.find({ personId }).sort({ createdAt: -1 }).exec();
     }
@@ -31,6 +36,18 @@ class ExamRepository {
         return await Exam.findOne({
             personId,
             programId: { $in: programIds }
+        }).sort({ createdAt: -1 }).exec();
+    }
+
+    async findAllProgramIds(programIds) {
+        return await Exam.find({
+            programId: { $in: programIds }
+        }).exec();
+    }
+
+    async findLatestExam(personId) {
+        return await Exam.findOne({
+            personId
         }).sort({ createdAt: -1 }).exec();
     }
 

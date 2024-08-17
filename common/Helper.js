@@ -412,5 +412,31 @@ module.exports = class Helper {
     }
   }
 
+  static imageFileToBase64(filePath) {
+    try {
+      // Lire le fichier image depuis le chemin relatif
+      const imageData = fs.readFileSync(filePath);
+
+      // Convertir les données en base64
+      return Buffer.from(imageData).toString('base64');
+    } catch (error) {
+      console.error('Erreur lors de la conversion de l\'image en base64 :', error.message);
+      return null;
+    }
+  }
+
+  static formatDate(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  static addYearsToDate(date, yearsToAdd) {
+    const newDate = new Date(date); // Crée une copie de la date d'origine
+    newDate.setFullYear(newDate.getFullYear() + yearsToAdd); // Ajoute le nombre d'années spécifié
+    return newDate;
+  }
+
 
 };

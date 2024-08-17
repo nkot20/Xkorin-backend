@@ -96,6 +96,37 @@ class ExamService {
         }
     }
 
+    async getExamByInstitution(institutionId) {
+        try {
+            const programs = await programService.listProgramsByInstitutionWithoutPagination(institutionId);
+            const programIds = programs.map(program => program._id);
+
+            return await examRepository.findAllProgramIds(programIds);
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
+
+
+    async getLatestExam(personId) {
+        try {
+            return await examRepository.findLatestExam(personId);
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
+
+    async getAllExams() {
+        try {
+            return await examRepository.findAll();
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
+
     async getInstitutionByExamId(examId) {
         try {
             const result = await examRepository.aggregateInstitution(examId);

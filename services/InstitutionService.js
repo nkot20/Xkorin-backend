@@ -46,6 +46,14 @@ class InstitutionService {
         }
     }
 
+    async getAllInstitutionsByStatuts(status) {
+        try {
+            return await InstitutionRepository.findByStatus(status);
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async getInstitutionByName(name) {
         try {
             return await InstitutionRepository.findByName(name);
