@@ -52,6 +52,8 @@ jobs:
         run: npm install
 
       - name: Run tests
+        env:
+          LOG_KEY: ${{ secrets.LOG_KEY }}
         run: npm test
 
   deploy:
