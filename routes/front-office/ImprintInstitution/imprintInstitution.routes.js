@@ -2,7 +2,7 @@ const Joi = require('joi');
 const express = require('express');
 const asyncHandler = require('../../../middlewares/asyncHandler'); // Assuming asyncHandler is defined here
 const impRepository = require('../../../repositories/ImprintRepository');
-const imprintInstitutionRepository = require('../../../repositories/ImprintInstitutionRepository');
+const imprintInstitutionService = require('../../../services/ImprintInstitutionService');
 const validateSchema = require("../../../middlewares/validationSchema");
 const logger = require("../../../logger");
 const router = express.Router();
@@ -27,7 +27,7 @@ router.post(
     '/create',
     validateSchema(imprintInstitutionCreateSchema),
     asyncHandler(async (req, res) => {
-        const imprintInstitution = await imprintInstitutionRepository.create(req.body);
+        const imprintInstitution = await imprintInstitutionService.create(req.body);
         return res.status(200).send(imprintInstitution);
     })
 );
@@ -41,7 +41,7 @@ router.post(
 router.get(
     '/institution/:institutionId',
     asyncHandler(async (req, res) => {
-        const imprintInstitution = await imprintInstitutionRepository.getImprintsByInstitution(req.params.institutionId);
+        const imprintInstitution = await imprintInstitutionService.getImprintsByInstitution(req.params.institutionId);
         return res.status(200).send(imprintInstitution);
     })
 );

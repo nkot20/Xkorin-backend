@@ -20,6 +20,11 @@ class LanguageRepository {
         }
     }
 
+    async findLanguageByIsoCode (isoCode){
+        const language = await Language.findOne({ isoCode: isoCode });
+        return language;
+    }
+
 }
 
 const languageRepository = new LanguageRepository();

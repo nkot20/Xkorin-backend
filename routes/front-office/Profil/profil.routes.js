@@ -2,7 +2,7 @@ const Joi = require('joi');
 const express = require('express');
 const router = express.Router();
 const asyncHandler = require('../../../middlewares/asyncHandler');
-const profilRepository = require('../../../repositories/ProfilRepository');
+const profilService = require('../../../services/ProfilService');
 const logger = require('../../../logger');
 
 /**
@@ -14,7 +14,7 @@ const logger = require('../../../logger');
 router.get(
     '/:isoCode',
     asyncHandler(async (req, res) => {
-        const profils = await profilRepository.getAllByLanguage(req.params.isoCode);
+        const profils = await profilService.getAllProfilsByLanguage(req.params.isoCode);
         return res.status(200).send(profils);
     })
 );

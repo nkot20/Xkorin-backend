@@ -1,3 +1,4 @@
+/*
 const Usager = require('../models/Usager');
 const calculPointRepository = require('../repositories/CaculPointRepository');
 const Answer = require('../models/Answer');
@@ -30,7 +31,7 @@ class UsagerRepository {
                     formation: usager.title,
                     points: pointsUsagers[usagerId]
                 }, usager._id, quizId);
-                Helper.exportWebsiteAsPdf({
+                Helper.exportCertificatExamAsPdf({
                     date: this.formatDate(new Date()),
                     dateExpiration: this.formatDate(this.addYearsToDate(new Date(),1)),
                     lastname: usager.civilite + ' '+usager.last_name,
@@ -109,4 +110,4 @@ class UsagerRepository {
 }
 
 const usagerRepository = new UsagerRepository();
-module.exports = usagerRepository;
+module.exports = usagerRepository;*/

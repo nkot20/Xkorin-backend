@@ -1,78 +1,68 @@
-require('dotenv').config();
+// repositories/ProfilRepository.js
 const Profil = require('../models/Profil');
-const ProfilTranslation = require('../models/ProfilTranslation')
+const ProfilTranslation = require('../models/ProfilTranslation');
 const Language = require("../models/Language");
 
 class ProfilRepository {
-    async create(translations) {
+    async createProfil(profilData) {
         try {
-            const englishProfil = translations.filter(profil => profil.isoCode === 'en');
-            const newProfil = await Profil.create({label: englishProfil[0].label});
-
-            await Promise.all(translations.map(async (profil) => {
-
-                const language = await Language.findOne({ isoCode: profil.isoCode });
-                if (language) {
-                    await ProfilTranslation.create({ label: profil.label, languageId: language._id, profilId: newProfil._id });
-                    return language._id;
-                }
-            }));
-            return newProfil
+            return await Profil.create(profilData);
         } catch (error) {
-            console.error("Something went to wrong: ", error);
+            console.error("Error creating profil: ", error);
             throw error;
         }
     }
 
-    async getAll() {
+    async createProfilTranslation(profilTranslationData) {
         try {
-            const profils = await Profil.find();
-            let response = [];
-            await Promise.all(profils.map(async (profil) => {
-                const profilTranslation = await ProfilTranslation.find({profilId: profil._id});
-                let translation = '';
-                profilTranslation.forEach(value => {
-                    translation += value.label + ' / '
-                })
-                translation = translation.substring(0, translation.length - 2)
-                response.push({profil, translation});
-            }))
-            return response;
+            return await ProfilTranslation.create(profilTranslationData);
         } catch (error) {
-            console.error("Something went to wrong: ", error);
+            console.error("Error creating profil translation: ", error);
             throw error;
         }
     }
 
-    async getAllByLanguage(isoCode) {
+    async findLanguageByIsoCode(isoCode) {
         try {
-            const language = await Language.findOne({isoCode});
-            const profils = await Profil.find();
-            let response = [];
-            await Promise.all(profils.map(async (profil) => {
-                const profilTranslation = await ProfilTranslation.findOne({profilId: profil._id, languageId: language._id});
-                profil.label = profilTranslation.label;
-                response.push(profil);
-            }))
-            return response;
+            return await Language.findOne({ isoCode });
         } catch (error) {
-            console.error("Something went to wrong: ", error);
+            console.error("Error finding language: ", error);
             throw error;
         }
     }
 
+    async findAllProfils() {
+        try {
+            return await Profil.find();
+        } catch (error) {
+            throw error;
+        }
+    }
 
+    async findProfilTranslations(profilId) {
+        try {
+            return await ProfilTranslation.find({ profilId });
+        } catch (error) {
+            throw error;
+        }
+    }
 
-    async getProfilById(id) {
+    async findProfilTranslationByLanguage(profilId, languageId) {
+        try {
+            return await ProfilTranslation.findOne({ profilId, languageId });
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async findProfilById(id) {
         try {
             return await Profil.findById(id);
         } catch (error) {
-            console.error("Something went to wrong: ", error);
+            console.error("Error finding profil: ", error);
             throw error;
         }
     }
-
 }
 
-const profilRepository = new ProfilRepository();
-module.exports = profilRepository;
+module.exports = new ProfilRepository();

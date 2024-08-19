@@ -6,7 +6,8 @@ const pdf = require("pdf-creator-node");
 const fs = require("fs");
 const path = require('path');
 // Read HTML Template
-const template = fs.readFileSync("./templates/Certificat/page.html", "utf8");
+const templateCertificat = fs.readFileSync("./templates/Certificat/page.html", "utf8");
+const templateDashboard = fs.readFileSync("./templates/Dashboard/imprint-dashboard.html", "utf8");
 const QRCode = require('qrcode');
 const mustache = require('mustache')
 const puppeteer = require('puppeteer');
@@ -133,7 +134,7 @@ module.exports = class Helper {
 
   static printCertificatTrainingImprint(datas, idQuiz, idUsager) {
     try {
-      const html = mustache.render(template, datas);
+      const html = mustache.render(templateCertificat, datas);
       let document = {
         html: html,
         data: {
@@ -167,12 +168,12 @@ module.exports = class Helper {
   }
 
   static generateQrCode(datas, personId, examId, imprint) {
-    const directoryPath = './public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png';
+    const directoryPath = 'public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png';
 
     if (fs.existsSync(directoryPath)){
       return;
     }
-    QRCode.toFile('./public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png', JSON.stringify(datas), {
+    QRCode.toFile('public/qrcode/'+ imprint + '_' +examId+'_'+personId+'.png', JSON.stringify(datas), {
       errorCorrectionLevel: 'H',
       width: 150,
       height: 150
@@ -182,16 +183,20 @@ module.exports = class Helper {
     });
   }
 
-  static async exportWebsiteAsPdf(data, examId, imprint) {
+  static async exportCertificatExamAsPdf(data, examId, imprint, personId) {
     try {
-      const directoryPath = "./public/certificats/imprints/"+examId;
+      this.generateQrCode({
+        date: data.date,
+        nom: data.name,
+        formation: data.formation,
+        score: data.points + '/1216'
+      }, personId, examId, imprint.name);
+      const directoryPath = "public/certificats/imprints/"+examId;
 
       if (!fs.existsSync(directoryPath)){
         fs.mkdirSync(directoryPath, { recursive: true });
-      } else {
-        return;
       }
-      const html = mustache.render(template, data);
+      const html = mustache.render(templateCertificat, data);
       // Create a browser instance
       const browser = await puppeteer.launch({
         headless: 'new'
@@ -210,13 +215,117 @@ module.exports = class Helper {
       //this.createDirectoryIfNotExistsSync(directoryPath);
       // Download the PDF
       const PDF = await page.pdf({
-        path: "./public/certificats/imprints/"+examId+ "/" +imprint+ ".pdf",
+        path: directoryPath + "/" +imprint+ ".pdf",
         margin: { top: '5px', right: '10px', bottom: '5px', left: '10px' },
         printBackground: true,
         format: 'A4',
       });
 
       // Close the browser instance
+      await browser.close();
+
+      return PDF;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static createSquares(value) {
+    const totalSquares = 7;
+    const squareData = [];
+    for (let i = 0; i < totalSquares; i++) {
+      if (i < totalSquares - value) {
+        squareData.push({ class: 'gray', star: '' });
+      } else {
+        let className = '';
+        let star = '';
+        switch (value) {
+          case 7:
+            className = 'green star';
+            star = '★';
+            break;
+          case 6:
+            className = 'green';
+            break;
+          case 5:
+            className = 'green-white';
+            break;
+          case 4:
+            className = 'orange';
+            break;
+          case 3:
+            className = 'grow';
+            break;
+          case 2:
+            className = 'grow-white';
+            break;
+          case 1:
+            className = 'red';
+            break;
+        }
+        squareData.push({ class: className, star: star });
+      }
+    }
+    console.log()
+    return squareData;
+  }
+
+  static addPositionClasses(variables) {
+    return variables.forEach((variable, index) => {
+      variable.isOdd = (index % 2 !== 0);
+      variable.isEven = (index % 2 === 0);
+    });
+  }
+
+
+
+  static async exportDashboardExamAsPdf(data, examId, imprint) {
+    try {
+      // Définir les fonctions de calcul
+
+      // Préparer les données
+      data.variables.forEach(variable => {
+        variable.children.forEach(child => {
+          child.squares = this.createSquares(child.value)
+        });
+        variable.progressBarHeight = ((variable.children.length * 100)/2);
+        variable.progressHeight = ((variable.value * 100) / 7);
+      });
+      this.addPositionClasses(data.variables);
+      // Vérifiez le nombre d'enfants de la première variable
+      if (data.variables.length > 0 && data.variables[0].children.length > 6) {
+        data.variables[data.variables.length - 2].newPage = true;
+        data.variables[data.variables.length - 1].newPage = true;
+      }
+      // Rendre le template Mustache avec les données préparées
+      const html = mustache.render(templateDashboard, data);
+
+      const directoryPath = "public/dashboard/" + examId;
+      fs.mkdirSync(directoryPath, { recursive: true });
+
+      // Créer une instance de navigateur
+      const browser = await puppeteer.launch({
+        headless: 'new'
+      });
+
+      // Créer une nouvelle page
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: 'domcontentloaded' });
+
+      //await page.waitForSelector('img', { timeout: 120000 });
+
+      // Pour refléter le CSS utilisé pour les écrans au lieu de l'impression
+      await page.emulateMediaType('screen');
+
+      // Télécharger le PDF
+      const PDF = await page.pdf({
+        path: "public/dashboard/" + examId + "/" + imprint + ".pdf",
+        margin: { top: '5px', right: '10px', bottom: '5px', left: '10px' },
+        printBackground: true,
+        format: 'A4',
+      });
+
+      // Fermer l'instance du navigateur
       await browser.close();
 
       return PDF;
@@ -245,25 +354,25 @@ module.exports = class Helper {
 
   /**
    * Fonction pour combiner des PDF en un seul fichier
-   * @param {string} pdfDir - Chemin du répertoire contenant les fichiers PDF à combiner
+   * @param {string} pdfDirCertificat - Chemin du répertoire contenant les fichiers PDF à combiner
    * @param {string} outputFilePath - Chemin du fichier PDF combiné à générer
    */
-  static async combinePdfs(pdfDir, outputFilePath) {
+  static async combinePdfs(pdfDirCertificat,pdfDirDashboard,  outputFilePath) {
     try {
-      if (fs.existsSync(outputFilePath)){
-        console.log("file already combined");
-        return ;
-      }
-      // Lire tous les fichiers du répertoire
-      const files = await fs.promises.readdir(pdfDir);
-      // Filtrer pour obtenir uniquement les fichiers PDF
-      const pdfPaths = files.filter(file => path.extname(file).toLowerCase() === '.pdf')
-          .map(file => path.join(pdfDir, file));
 
-      if (pdfPaths.length === 0) {
+      // Lire tous les fichiers du répertoire
+      const filesCertificates = await fs.promises.readdir(pdfDirCertificat);
+      const filesDashboard = await fs.promises.readdir(pdfDirDashboard);
+      // Filtrer pour obtenir uniquement les fichiers PDF
+      const pdfPathsCertificates = filesCertificates.filter(file => path.extname(file).toLowerCase() === '.pdf')
+          .map(file => path.join(pdfDirCertificat, file));
+      const pdfPathsDashboards = filesDashboard.filter(file => path.extname(file).toLowerCase() === '.pdf')
+          .map(file => path.join(pdfDirDashboard, file));
+      if (pdfPathsCertificates.length === 0) {
         throw new Error('Aucun fichier PDF trouvé dans le répertoire spécifié.');
       }
 
+      const pdfPaths = [...pdfPathsCertificates, ...pdfPathsDashboards]
       // Créer un nouveau document PDF combiné
       const combinedPdf = await PDFDocument.create();
 
@@ -301,6 +410,32 @@ module.exports = class Helper {
     } catch (error) {
       console.error(`Erreur lors de la création du répertoire : ${error.message}`);
     }
+  }
+
+  static imageFileToBase64(filePath) {
+    try {
+      // Lire le fichier image depuis le chemin relatif
+      const imageData = fs.readFileSync(filePath);
+
+      // Convertir les données en base64
+      return Buffer.from(imageData).toString('base64');
+    } catch (error) {
+      console.error('Erreur lors de la conversion de l\'image en base64 :', error.message);
+      return null;
+    }
+  }
+
+  static formatDate(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  static addYearsToDate(date, yearsToAdd) {
+    const newDate = new Date(date); // Crée une copie de la date d'origine
+    newDate.setFullYear(newDate.getFullYear() + yearsToAdd); // Ajoute le nombre d'années spécifié
+    return newDate;
   }
 
 

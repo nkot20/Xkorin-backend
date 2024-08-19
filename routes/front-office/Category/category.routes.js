@@ -1,6 +1,6 @@
 const Joi = require('joi');
 const express = require('express');
-const categoryRepository = require('../../../repositories/CategoryRepository');
+const categoryService = require('../../../services/CategoryService');
 const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
@@ -17,7 +17,7 @@ const asyncHandler = require('../../../middlewares/asyncHandler');
 router.get(
     '/:isoCode',
     asyncHandler(async (req, res) => {
-        const response = await categoryRepository.getAllByLangage(req.params.isoCode);
+        const response = await categoryService.getAllCategoriesByLanguage(req.params.isoCode);
         res.status(200).send(response);
     })
 );

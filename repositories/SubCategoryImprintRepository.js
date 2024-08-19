@@ -1,33 +1,25 @@
-require('dotenv').config();
+// repositories/SubCategoryImprintRepository.js
 const SubCategoryImprint = require('../models/SubCategoryImprint');
-const ImprintRepository = require('../repositories/ImprintRepository');
 
 class SubCategoryImprintRepository {
-    async create(imprintId, subcategoryId) {
+    async createSubCategoryImprint(imprintId, subcategoryId) {
         try {
-            //const imprint = await ImprintRepository.
-            return await SubCategoryImprint.create({imprintId, subcategoryId});
+            return await SubCategoryImprint.create({ imprintId, subcategoryId });
         } catch (error) {
-            console.error("Something went to wrong: ", error);
+            console.error("Error creating SubCategoryImprint: ", error);
             throw error;
         }
     }
 
-    async getImprintIdBySubcategoryId(subcategoryId) {
+    async findImprintIdsBySubcategoryId(subcategoryId) {
         try {
-            const resp = await SubCategoryImprint.find({subcategoryId});
-            const imprintIds = [];
-            resp.forEach(value => {
-                imprintIds.push(value.imprintId);
-            })
-            return imprintIds;
+            const results = await SubCategoryImprint.find({ subcategoryId });
+            return results.map(result => result.imprintId);
         } catch (error) {
-            console.error("Something went to wrong: ", error);
+            console.error("Error finding imprint IDs by subcategory ID: ", error);
             throw error;
         }
     }
-
 }
 
-const subCategoryImprintRepository = new SubCategoryImprintRepository();
-module.exports = subCategoryImprintRepository;
+module.exports = new SubCategoryImprintRepository();

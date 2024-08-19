@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impression de l'Empreinte</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        @media print {
+            .variable {
+                page-break-inside: avoid;
+            }
+
+            .variable.new-page {
+                page-break-before: always;
+            }
+        }
+
+        .imprint-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .variable {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            position: relative;
+            min-width: 220px;
+        }
+
+        .variable-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .categories {
+            margin-bottom: 10px;
+        }
+
+        .exposure-row {
+            margin-bottom: 10px;
+        }
+
+        .category {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 5px;
+            text-align: end;
+            margin-right: 5px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            width: 150px;
+            margin-left: 19%;
+        }
+
+        .squares {
+            display: flex;
+        }
+
+        .square {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+        }
+
+        .square.green {
+            background-color: green;
+        }
+
+        .square.green.star::after {
+            content: '★';
+            color: yellow;
+            display: block;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .square.red {
+            background-color: red;
+        }
+
+        .square.gray {
+            background-color: gray;
+        }
+
+        .square.green-white {
+            background-color: #28C76F;
+        }
+
+        .square.orange {
+            background-color: orange;
+        }
+
+        .square.grow {
+            background-color: #6C3A24;
+        }
+
+        .square.grow-white {
+            background-color: #9A5B3F;
+        }
+
+        .progress-container {
+            position: absolute;
+            bottom: 20px;
+            right: 8px;
+            top: 70px;
+            width: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .progress-bar {
+            width: 100%;
+        }
+
+        .progress {
+            background-color: #2f9e44;
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        h1,
+        h2,
+        p {
+            text-align: center;
+        }
+
+        #image_center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .text {
+            width: auto;
+            text-align: justify;
+            color: #BFBFBE;
+            margin-top: -2%;
+        }
+
+        .variable.odd .categories {
+            align-items: flex-start;
+            margin-left: 0;
+        }
+
+        .variable.odd .category {
+            text-align: left;
+            margin-left: 0;
+            margin-right: 20px;
+        }
+
+        .variable.odd .squares {
+            flex-direction: row-reverse;
+        }
+
+        .variable.odd .progress-container {
+            right: 8px;
+            left: 8px;
+        }
+
+        /* Styles pour les variables paires (facultatif) */
+        .variable.even .categories {
+            align-items: flex-end;
+        }
+
+        .variable.even .category {
+            text-align: right;
+            margin-right: 0;
+
+        }
+
+        .variable.even .squares {
+            flex-direction: row;
+        }
+
+        .variable.even .progress-container {
+            right: 8px;
+            left: auto;
+        }
+    </style>
+</head>
+
+<body>
+<div id="intro">
+    Given the assessment of {{date}} <br />
+    Given the decision of {{date}} that resulted from it
+</div>
+
+<div class="gap-6 w-full min-w-0 bg-card shadow rounded-2xl overflow-hidden">
+    <h1 class="imprint-title">{{imprintName}}</h1>
+    <div class="imprint-container">
+        {{#variables}}
+
+            <div class="variable {{#isOdd}}odd{{/isOdd}} {{#isEven}}even{{/isEven}}">
+                <h2 class="variable-title">{{name}}</h2>
+                <div class="categories">
+                    {{#children}}
+                        <div class="exposure-row">
+                            <div class="category">{{name}}</div>
+                            <div class="squares">
+                                {{#squares}}
+                                    <div class="square {{class}}">{{start}}</div>
+                                {{/squares}}
+                            </div>
+                        </div>
+                    {{/children}}
+                </div>
+                <div class="progress-container" style="height: {{progressBarHeight}}px;">
+                    <div class="progress-bar" style="height: {{progressBarHeight}}px;">
+                        <div class="progress" style="height: {{progressBarHeight}}px;"></div>
+                    </div>
+                </div>
+            </div>
+            {{#newPage}}
+                <div style="page-break-before: always;"></div>
+            {{/newPage}}
+        {{/variables}}
+
+    </div>
+</div>
+</body>
+
+</html>

@@ -1,6 +1,6 @@
 const Joi = require('joi');
 const express = require('express');
-const optionRepository = require('../../../repositories/OptionRepository');
+const optionService = require('../../../services/OptionService');
 const router = express.Router();
 const logger = require('../../../logger');
 const authMiddleware = require('../../../middlewares/authenticate.middleware');
@@ -17,7 +17,7 @@ router.post(
     '/',
     //validateSchema(optionCreateSchema),
     asyncHandler(async (req, res) => {
-        const response = await optionRepository.create(req.body.option, req.body.translation);
+        const response = await optionService.createOption(req.body.option, req.body.translation);
         res.status(201).send(response);
     })
 );
@@ -26,7 +26,7 @@ router.post(
 router.get(
     '/:isoCode',
     asyncHandler(async (req, res) => {
-        const response = await optionRepository.getAllByIsoCodeLanguage(req.params.isoCode);
+        const response = await optionService.getAllOptionsByLanguage(req.params.isoCode);
         res.status(201).send(response);
     })
 );

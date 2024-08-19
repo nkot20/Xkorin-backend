@@ -1,66 +1,71 @@
-require('dotenv').config();
+// repositories/SubCategoryRepository.js
 const SubCategory = require('../models/SubCategory');
 const SubCategoryTranslation = require('../models/SubCategoryTranslation');
-const Language = require("../models/Language");
+const Language = require('../models/Language');
 
 class SubCategoryRepository {
-    async create(payload, translations) {
+    async createSubCategory(subCategoryData) {
         try {
-            const englishCategory = translations.filter(translation => translation.isoCode === 'en');
-            const subCategory = await SubCategory.create({label: englishCategory[0].label, categoryId: payload.categoryId});
-            await Promise.all(translations.map(async (subCategoryTranslation) => {
-                const language = await Language.findOne({ isoCode: subCategoryTranslation.isoCode });
-                if (language) {
-                    await SubCategoryTranslation.create({ label: subCategoryTranslation.label, languageId: language._id, subcategoryId: subCategory._id });
-                    return language._id;
-                }
-            }));
-            return subCategory;
+            return await SubCategory.create(subCategoryData);
         } catch (error) {
-            console.error("Erreur lors de l'ajout du de la proposition: ", error);
+            console.error("Error creating subcategory: ", error);
             throw error;
         }
     }
 
-    async getAll() {
+    async createSubCategoryTranslation(translationData) {
         try {
-            const categories = await SubCategory.find();
-            let response = [];
-            await Promise.all(categories.map(async (subCategory) => {
-                const subCategoryTranslations = await SubCategoryTranslation.find({subcategoryId: subCategory._id});
-                let translation = '';
-                subCategoryTranslations.forEach(value => {
-                    translation += value.label + ' / '
-                })
-                translation = translation.substring(0, translation.length - 2)
-                response.push({subCategory, translation});
-            }))
-            return response;
+            return await SubCategoryTranslation.create(translationData);
         } catch (error) {
+            console.error("Error creating subcategory translation: ", error);
             throw error;
         }
     }
 
-    async getAllByLangageAndCategory(isoCode, idCategory) {
+    async findLanguageByIsoCode(isoCode) {
         try {
-            const language = await Language.findOne({isoCode})
-            const subCategories = await SubCategory.find({categoryId: idCategory});
-            let response = [];
-            await Promise.all(subCategories.map(async (subCategory) => {
-                const subCategoryTranslation = await SubCategoryTranslation.findOne({subcategoryId: subCategory._id, languageId: language._id});
-                subCategory.label = subCategoryTranslation.label;
-                response.push(subCategory);
-            }))
-            return response;
+            return await Language.findOne({ isoCode });
         } catch (error) {
+            console.error("Error finding language: ", error);
             throw error;
         }
     }
 
+    async findAllSubCategories() {
+        try {
+            return await SubCategory.find();
+        } catch (error) {
+            console.error("Error finding subcategories: ", error);
+            throw error;
+        }
+    }
 
+    async findSubCategoryTranslations(subCategoryId) {
+        try {
+            return await SubCategoryTranslation.find({ subcategoryId: subCategoryId });
+        } catch (error) {
+            console.error("Error finding subcategory translations: ", error);
+            throw error;
+        }
+    }
 
+    async findSubCategoriesByCategoryId(categoryId) {
+        try {
+            return await SubCategory.find({ categoryId });
+        } catch (error) {
+            console.error("Error finding subcategories by category: ", error);
+            throw error;
+        }
+    }
 
+    async findSubCategoryTranslation(subCategoryId, languageId) {
+        try {
+            return await SubCategoryTranslation.findOne({ subCategoryId, languageId });
+        } catch (error) {
+            console.error("Error finding subcategory translation: ", error);
+            throw error;
+        }
+    }
 }
 
-const subCategoryRepository = new SubCategoryRepository();
-module.exports = subCategoryRepository;
+module.exports = new SubCategoryRepository();

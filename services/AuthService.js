@@ -1,6 +1,6 @@
 const companyRepository = require('../repositories/CompanyRepository');
 const userRepository = require('../repositories/UserRepository');
-const institutionRepository = require('../repositories/InstitutionRepository');
+const institutionService = require('../services/InstitutionService');
 const personRepository = require('../repositories/PersonRepository');
 const User = require("../models/User");
 const emailService = require("./emailService");
@@ -75,7 +75,7 @@ class AuthService {
                     throw new Error("Company already exists");
                 }
             } else if (datas.type === 'institution') {
-                const oldInstitution = await institutionRepository.getByName(datas.company);
+                const oldInstitution = await institutionService.getByName(datas.company);
                 if (oldInstitution) {
                     console.warn("Institution already exists", oldInstitution);
                     throw new Error("Institution already exists");
@@ -199,7 +199,7 @@ class InstitutionRegistrationStrategy extends RegistrationStrategy {
             agreements: datas.agreements,
             subcategory_id: datas.subcategory,
         };
-        const institution = await institutionRepository.create(institutionDatas);
+        const institution = await institutionService.create(institutionDatas);
 
         // Envoi de l'email de validation
         const imagePath = path.join(__dirname, '../public/logos/xkorin.PNG');
