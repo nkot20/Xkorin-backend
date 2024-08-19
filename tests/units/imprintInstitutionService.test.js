@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
-const ImprintInstitutionService = require('../services/ImprintInstitutionService');
-const ImprintInstitution = require('../models/ImprintInstitution');
-const Imprint = require('../models/Imprint');
+const ImprintInstitutionService = require('../../services/ImprintInstitutionService');
+const ImprintInstitution = require('../../models/ImprintInstitution');
+const Imprint = require('../../models/Imprint');
 
 describe('ImprintInstitutionService', () => {
     describe('create', () => {

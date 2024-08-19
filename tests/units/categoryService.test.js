@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
-const categoryService = require('../services/CategoryService');
-const Category = require('../models/Category');
-const CategoryTranslation = require('../models/CategoryTranslation');
-const Language = require('../models/Language');
-const LanguageRepository = require('../repositories/LanguageRepository');
+const categoryService = require('../../services/CategoryService');
+const Category = require('../../models/Category');
+const CategoryTranslation = require('../../models/CategoryTranslation');
+const Language = require('../../models/Language');
+const LanguageRepository = require('../../repositories/LanguageRepository');
 
-describe('CategoryRepository', () => {
+describe('CategoryService', () => {
     let englishLanguage, polishLanguage;
 
     beforeEach(async () => {
@@ -26,6 +26,7 @@ describe('CategoryRepository', () => {
             expect(category.label).toBe('Test Category');
 
             const translationsInDb = await CategoryTranslation.find({ categoryId: category._id });
+            //console.log(translationsInDb)
             expect(translationsInDb.length).toBe(2);
             expect(translationsInDb[0].label).toBe('Test Category');
             expect(translationsInDb[1].label).toBe('Test Kategoria');

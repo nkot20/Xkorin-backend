@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
-const InstitutionService = require('../services/InstitutionService');
-const Institution = require('../models/Institution');
-const userRepository = require('../repositories/UserRepository');
-const programService = require('../services/ProgramService');
+const InstitutionService = require('../../services/InstitutionService');
+const Institution = require('../../models/Institution');
+const userRepository = require('../../repositories/UserRepository');
+const programService = require('../../services/ProgramService');
 
-jest.mock('../repositories/UserRepository');
-jest.mock('../services/ProgramService');
+jest.mock('../../repositories/UserRepository');
+jest.mock('../../services/ProgramService');
 
 describe('InstitutionService', () => {
     describe('create', () => {

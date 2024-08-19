@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
-const examService = require('../services/ExamService');
-const Exam = require('../models/Exam');
-const Person = require('../models/Person');
-const Company = require('../models/Company');
-const Program = require('../models/Program');
-const Institution = require('../models/Institution');
+const examService = require('../../services/ExamService');
+const Exam = require('../../models/Exam');
+const Person = require('../../models/Person');
+const Company = require('../../models/Company');
+const Program = require('../../models/Program');
+const Institution = require('../../models/Institution');
 
 
 describe('ExamService', () => {

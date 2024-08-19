@@ -1,10 +1,10 @@
-const Language = require('../models/Language');
-const languageRepository = require('../repositories/LanguageRepository');
+const Language = require('../../models/Language');
+const languageRepository = require('../../repositories/LanguageRepository');
 
 // Mock the Language model
-jest.mock('../models/Language');
+jest.mock('../../models/Language');
 
-describe('LanguageRepository', () => {
+describe('LanguageService', () => {
     afterEach(() => {
         jest.clearAllMocks(); // Clear any mocked calls between tests
     });

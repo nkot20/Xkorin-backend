@@ -1,7 +1,7 @@
-const Person = require('../models/Person');
-const personRepository = require('../repositories/PersonRepository');
+const Person = require('../../models/Person');
+const personRepository = require('../../repositories/PersonRepository');
 
-jest.mock('../models/Person');
+jest.mock('../../models/Person');
 
 describe('PersonRepository', () => {
 

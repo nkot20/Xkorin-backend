@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
-const companyService = require('../services/CompanyService');
-const Company = require('../models/Company');
+const companyService = require('../../services/CompanyService');
+const Company = require('../../models/Company');
 const request = require('supertest');
 let mongoServer;
 
-describe('CompanyRepository', () => {
+describe('CompanyService', () => {
     describe('getCompany', () => {
         it('should return a company by ID', async () => {
             // Créer une fausse entreprise

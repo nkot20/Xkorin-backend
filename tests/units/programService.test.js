@@ -1,12 +1,12 @@
 // programService.test.js
 const mongoose = require('mongoose');
-const ProgramService = require('../services/ProgramService');
-const programRepository = require('../repositories/ProgramRepository');
-const institutionService = require('../services/InstitutionService');
-const INSTITUTIONNAME = require('../config/institution');
+const ProgramService = require('../../services/ProgramService');
+const programRepository = require('../../repositories/ProgramRepository');
+const institutionService = require('../../services/InstitutionService');
+const INSTITUTIONNAME = require('../../config/institution');
 
-jest.mock('../repositories/ProgramRepository');
-jest.mock('../services/InstitutionService');
+jest.mock('../../repositories/ProgramRepository');
+jest.mock('../../services/InstitutionService');
 
 describe('ProgramService', () => {
     test('create should save a new program', async () => {

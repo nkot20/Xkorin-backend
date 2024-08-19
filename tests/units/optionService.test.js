@@ -1,14 +1,14 @@
-const Option = require('../models/Option');
-const Language = require('../models/Language');
-const OptionTranslation = require('../models/OptionTranslation');
-const optionService = require('../services/OptionService');
+const Option = require('../../models/Option');
+const Language = require('../../models/Language');
+const OptionTranslation = require('../../models/OptionTranslation');
+const optionService = require('../../services/OptionService');
 
 // Mock the models
-jest.mock('../models/Option');
-jest.mock('../models/Language');
-jest.mock('../models/OptionTranslation');
+jest.mock('../../models/Option');
+jest.mock('../../models/Language');
+jest.mock('../../models/OptionTranslation');
 
-describe('OptionRepository', () => {
+describe('OptionService', () => {
     afterEach(() => {
         jest.clearAllMocks(); // Clear any mocked calls between tests
     });

@@ -1,13 +1,13 @@
-const Profil = require('../models/Profil');
-const ProfilTranslation = require('../models/ProfilTranslation');
-const Language = require('../models/Language');
-const profilService = require('../services/ProfilService');
+const Profil = require('../../models/Profil');
+const ProfilTranslation = require('../../models/ProfilTranslation');
+const Language = require('../../models/Language');
+const profilService = require('../../services/ProfilService');
 
-jest.mock('../models/Profil');
-jest.mock('../models/ProfilTranslation');
-jest.mock('../models/Language');
+jest.mock('../../models/Profil');
+jest.mock('../../models/ProfilTranslation');
+jest.mock('../../models/Language');
 
-describe('ProfilRepository', () => {
+describe('ProfilService', () => {
 
     afterEach(() => {
         jest.clearAllMocks(); // Nettoie les mocks après chaque test

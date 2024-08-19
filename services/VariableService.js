@@ -368,8 +368,8 @@ class VariableService {
                 // Prepare an array to store processed variables
                 const processedVariables = await Promise.all(variables.map(async (variable) => {
                     // Find the latest weight for the variable from the weights collection
-                    const weight = await Weight.findOne({ variableId: variable._id, institutionId })
-                        .sort({ createdAt: -1 })
+                    const weight = await Weight.find({ variableId: variable._id, institutionId }).sort({ createdAt: -1 })
+                        .limit(1)
                         .select('optionId');
 
                     // Determine the final weight to use
