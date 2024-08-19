@@ -80,7 +80,7 @@ router.get(
 router.get(
     '/score/:id',
     asyncHandler(async (req, res) => {
-        const response = await imprintRepository.calulateImprintValue(req.params.id);
+        const response = await imprintRepository.calculateImprintValue(req.params.id);
         return res.status(200).send({ score: response });
     })
 );
@@ -99,6 +99,23 @@ router.get(
         return res.status(200).send(response);
     })
 );
+
+
+
+/**
+ * @route GET /get-certificate-and-dashboard/:examId
+ * @desc Get generated file for exam
+ * @access Public
+ * @param {string} examId - The ID of the exam
+ */
+router.get(
+    '/get-certificate-and-dashboard/:examId',
+    asyncHandler(async (req, res) => {
+        const response = await imprintRepository.getFiles(req.params.examId);
+        return res.status(200).send(response);
+    })
+);
+
 
 /**
  * @route GET /cii/:examId
@@ -155,7 +172,23 @@ router.get(
 router.get(
     '/:institutionId/evolution/:personId',
     asyncHandler(async (req, res) => {
-        const response = await imprintRepository.getDatasForEachExam(req.params.institutionId, req.params.personId);
+        const response = await imprintRepository.getDatasForEachExamOfInstitution(req.params.institutionId, req.params.personId);
+        return res.status(200).send(response);
+    })
+);
+
+/**
+ * @route GET /:institutionId/evolution/:personId
+ * @desc Get inclusive confidence index evolution for all exams concerning a person
+ * @desc Retrieves the evolution of confidence indices and imprint values for each exam
+ * @access Public
+ * @param {string} institutionId - The ID of the institution
+ * @param {string} personId - The ID of the person
+ */
+router.get(
+    '/evolution/:personId',
+    asyncHandler(async (req, res) => {
+        const response = await imprintRepository.getDatasForEachExamOfPerson(req.params.personId);
         return res.status(200).send(response);
     })
 );

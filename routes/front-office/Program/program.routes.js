@@ -2,7 +2,7 @@ const Joi = require('joi');
 const express = require('express');
 const router = express.Router();
 const asyncHandler = require('../../../middlewares/asyncHandler');
-const programRepository = require('../../../repositories/ProgramRepository');
+const programService = require('../../../services/ProgramService');
 const logger = require('../../../logger');
 const validateSchema = require("../../../middlewares/validationSchema");
 
@@ -31,7 +31,7 @@ router.post(
     '/create',
     validateSchema(programCreateSchema),
     asyncHandler(async (req, res) => {
-        const program = await programRepository.create(req.body);
+        const program = await programService.create(req.body);
         return res.status(200).send(program);
     })
 );
@@ -47,7 +47,7 @@ router.patch(
     '/update/:id',
     validateSchema(programUpdateSchema),
     asyncHandler(async (req, res) => {
-        const program = await programRepository.update(req.params.id, req.body);
+        const program = await programService.update(req.params.id, req.body);
         return res.status(200).send(program);
     })
 );
@@ -62,7 +62,7 @@ router.patch(
 router.get(
     '/:institutionId/no-pagination/',
     asyncHandler(async (req, res) => {
-        const response = await programRepository.listProgramsByInstitutionWithoutPagination(req.params.institutionId);
+        const response = await programService.listProgramsByInstitutionWithoutPagination(req.params.institutionId);
         res.status(200).send(response);
     })
 );
@@ -88,7 +88,8 @@ router.get(
             sortDirection: req.query.order === 'asc' ? -1 : 1,
             sortBy: req.query.sort || 'createdAt',
         };
-        const response = await programRepository.listProgramsByInstitution(req.params.institutionId, options);
+        const response = await programService.listProgramsByInstitution(req.params.institutionId, options);
+        console.log(response)
         const pagination = {
             hasNextPage: response.hasNextPage,
             hasPrevPage: response.hasPrevPage,
@@ -113,7 +114,7 @@ router.get(
 router.patch(
     '/archived/:id',
     asyncHandler(async (req, res) => {
-        const program = await programRepository.archivedProgram(req.params.id);
+        const program = await programService.archivedProgram(req.params.id);
         return res.status(200).send(program);
     })
 );
@@ -126,7 +127,7 @@ router.patch(
 router.get(
     '/',
     asyncHandler(async (req, res) => {
-        const programs = await programRepository.getAll();
+        const programs = await programService.getAll();
         return res.status(200).send(programs);
     })
 );
@@ -140,7 +141,7 @@ router.get(
 router.get(
     '/details/:id',
     asyncHandler(async (req, res) => {
-        const program = await programRepository.getById(req.params.id);
+        const program = await programService.getById(req.params.id);
         return res.status(200).send(program);
     })
 );

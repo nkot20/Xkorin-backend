@@ -2,7 +2,7 @@ const Joi = require('joi');
 const express = require('express');
 const router = express.Router();
 const asyncHandler = require('../../../middlewares/asyncHandler');
-const optionRepository = require('../../../repositories/OptionRepository');
+const optionService = require('../../../services/OptionService');
 const logger = require('../../../logger');
 
 /**
@@ -14,7 +14,7 @@ const logger = require('../../../logger');
 router.get(
     '/:isoCode',
     asyncHandler(async (req, res) => {
-        const response = await optionRepository.getAllByIsoCodeLanguage(req.params.isoCode);
+        const response = await optionService.getAllOptionsByLanguage(req.params.isoCode);
         res.status(200).send(response);
     })
 );

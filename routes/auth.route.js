@@ -8,7 +8,7 @@ const User = require('../models/User');
 const logger = require('../logger');
 const ROLE = require('../config/role');
 const companyRepository = require('../repositories/CompanyRepository');
-const institutionRepository = require('../repositories/InstitutionRepository');
+const institutionService = require('../services/InstitutionService');
 const authService = require('../services/AuthService');
 const personRepository = require('../repositories/PersonRepository');
 const authController = require('../controllers/auth/auth.controller');
@@ -135,7 +135,7 @@ router.post('/sign-in', validateSchema(loginSchema), asyncHandler(async (req, re
         });
       }
       if (hasRole(user.role, ROLE.INSTITUTION_ADMIN) || hasRole(user.role, ROLE.INSTITUTION_EMPLOYEE)) {
-        const institution = await institutionRepository.getByAdminId(user._id);
+        const institution = await institutionService.getInstitutionByAdminId(user._id);
         let newUser = user._doc
         newUser = Object.assign({}, newUser, {
           institution
@@ -224,7 +224,7 @@ router.post('/sign-in-with-token', passport.authenticate('jwt', { session: false
   }
 
   if (hasRole(user.role, ROLE.INSTITUTION_ADMIN) || hasRole(user.role, ROLE.INSTITUTION_EMPLOYEE)) {
-    const institution = await institutionRepository.getByAdminId(user._id);
+    const institution = await institutionService.getInstitutionByAdminId(user._id);
     const newUser = { ...user, institution };
     return res.json({ message: 'Authentication successful', accessToken, user: newUser });
   }
