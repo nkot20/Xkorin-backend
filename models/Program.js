@@ -12,6 +12,20 @@ const programSchema = Schema({
        type: Boolean,
        default: false,
     },
+    payment: {
+        isPaid: {
+            type: Boolean,
+            default: false
+        },
+        amount: {
+            type: Number,
+            default: 0
+        },
+        numberOfParticipants: {
+            type: Number,
+            default: 0
+        }
+    },
     targetInstitutionId: { type: Schema.Types.ObjectId, ref: 'institutions' },
 }, { timestamps: true });
 
