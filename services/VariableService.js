@@ -368,12 +368,14 @@ class VariableService {
                 // Prepare an array to store processed variables
                 const processedVariables = await Promise.all(variables.map(async (variable) => {
                     // Find the latest weight for the variable from the weights collection
+                    console.log(variable._id, institutionId)
                     const weight = await Weight.find({ variableId: variable._id, institutionId }).sort({ createdAt: -1 })
                         .limit(1)
                         .select('optionId');
 
+
                     // Determine the final weight to use
-                    const finalWeight = weight ? weight.optionId : defaultOptionId;
+                    const finalWeight = weight.length ? weight[0].optionId : defaultOptionId;
 
                     // Find the variable translation based on language
                     const translation = await VariableTranslation.findOne({

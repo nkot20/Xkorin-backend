@@ -23,4 +23,14 @@ router.get(
     })
 );
 
+/**
+ * get institution infos
+ */
+router.get(
+    '/:id',
+    asyncHandler(async (req, res) => {
+        const response = await institutionService.getInstitutionById(req.params.id);
+        res.status(200).send(response);
+    })
+);
 module.exports = router;

@@ -6,6 +6,7 @@ const LanguageRepository = require('../repositories/LanguageRepository');
 class CategoryService {
     async createCategoryWithTranslations(payload, translations) {
         try {
+            console.log(translations)
             const englishCategory = translations.find(translation => translation.isoCode === 'en');
             if (!englishCategory) {
                 throw new Error('English translation is required');
@@ -29,6 +30,15 @@ class CategoryService {
             }));
 
             return category;
+        } catch (error) {
+            console.error("Error creating category: ", error);
+            throw error;
+        }
+    }
+
+    async getAllCategory() {
+        try {
+            return await CategoryRepository.findAllCategories();
         } catch (error) {
             console.error("Error creating category: ", error);
             throw error;
@@ -69,6 +79,21 @@ class CategoryService {
             }));
 
             return response;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * get category with them translation
+     * @param id
+     * @returns {Promise<{translation: *, category: Category}
+     */
+    async getCategoryWithTranslation(id) {
+        try {
+            const category = await CategoryRepository.findCategoryById(id);
+            const categoryTranslations = await CategoryTranslationRepository.findCategoryTranslationsByCategoryId(category._id);
+            return { category, translations: categoryTranslations };
         } catch (error) {
             throw error;
         }
