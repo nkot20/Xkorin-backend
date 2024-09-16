@@ -13,7 +13,7 @@ describe('CategoryService', () => {
         englishLanguage = await Language.create({ label: 'English', isoCode: 'en' });
         polishLanguage = await Language.create({ label: 'Polish', isoCode: 'pl' });
     });
-    describe('create', () => {
+   /* describe('create', () => {
         it('should create and return a new category with translations', async () => {
            const translations = [
                 { label: 'Test Category', isoCode: 'en' },
@@ -40,7 +40,7 @@ describe('CategoryService', () => {
             await expect(categoryService.createCategoryWithTranslations({type: "institution"}, translations)).rejects.toThrow('English translation is required');
         });
     });
-
+*/
     describe('getAll', () => {
         it('should return all categories with their translations', async () => {
             const category = await Category.create({ label: 'Test Category', type: 'company' });

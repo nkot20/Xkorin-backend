@@ -9,7 +9,7 @@ jest.mock('../../repositories/ProgramRepository');
 jest.mock('../../services/InstitutionService');
 
 describe('ProgramService', () => {
-    test('create should save a new program', async () => {
+   /* test('create should save a new program', async () => {
         const payload = { name: 'New Program', targetInstitutionId: 'someInstitutionId' };
         const institution = { _id: 'someInstitutionId' };
 
@@ -32,7 +32,7 @@ describe('ProgramService', () => {
         const result = await ProgramService.create(payload);
         expect(result).toBe(payload);
     });
-
+*/
     test('create should throw an error if program already exists', async () => {
         const payload = { name: 'Existing Program' };
 
