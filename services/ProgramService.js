@@ -4,6 +4,7 @@ const institutionService = require("../services/InstitutionService");
 const programRepository = require("../repositories/ProgramRepository");
 const INSTITUTIONNAME = require("../config/institution");
 const Program = require("../models/Program");
+const programImprintService = require("../services/ProgramImprintService");
 
 class ProgramService {
     async create(payload) {
@@ -18,7 +19,10 @@ class ProgramService {
             if (program) {
                 throw new Error('Program already exists');
             }
-            return await programRepository.save(payload);
+            const newProgram = await programRepository.save(payload);
+            await Promise.all(payload.imprints.map(async (imprintId) => {
+                return await programImprintService.create({imprintId, programId: newProgram._id})
+            }))
         } catch (error) {
             throw error;
         }

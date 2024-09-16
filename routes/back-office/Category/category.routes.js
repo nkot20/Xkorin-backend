@@ -7,15 +7,21 @@ const authMiddleware = require('../../../middlewares/authenticate.middleware');
 const validateSchema = require("../../../middlewares/validationSchema");
 const asyncHandler = require('../../../middlewares/asyncHandler');
 
+/**
+ * Create category with translation in other languages
+ */
 router.post(
     '/',
     asyncHandler(async (req, res) => {
-        const { category, translation } = req.body;
-        const response = await categoryService.createCategoryWithTranslations(category, translation);
+        const { category, translations } = req.body;
+        const response = await categoryService.createCategoryWithTranslations(category, translations);
         res.status(201).json(response);
     })
 );
 
+/**
+ * get all category with their translation
+ */
 router.get(
     '/',
     asyncHandler(async (req, res) => {
@@ -24,6 +30,31 @@ router.get(
     })
 );
 
+/**
+ * get all category without translation and pagination
+ */
+router.get(
+    '/all/no-pagination',
+    asyncHandler(async (req, res) => {
+        const response = await categoryService.getAllCategory();
+        return res.status(200).json(response);
+    })
+);
+
+/**
+ * get all category without translation and pagination
+ */
+router.get(
+    '/details/:id',
+    asyncHandler(async (req, res) => {
+        const response = await categoryService.getCategoryWithTranslation(req.params.id);
+        return res.status(200).json(response);
+    })
+);
+
+/**
+ * get all category with a specific language
+ */
 router.get(
     '/:isoCode',
     asyncHandler(async (req, res) => {

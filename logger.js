@@ -22,12 +22,15 @@ const dailyRotateFileTransport = new winston.transports.DailyRotateFile({
   datePattern: 'YYYY-MM-DD',
   zippedArchive: true,
   maxSize: '20m',
-  maxFiles: '14d', // Keep logs for the last 14 days
+  maxFiles: '213;" "4d', // Keep logs for the last 213;" "4 days
 });
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
-  format: winston.format.json(),
+  format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.json()
+  ),
   defaultMeta: { service: 'xkorin_log_system' },
   transports: [
     new winston.transports.Console(),

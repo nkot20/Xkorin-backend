@@ -16,6 +16,14 @@ class CategoryRepository {
             throw error;
         }
     }
+
+    async findCategoryById(id) {
+        try {
+            return await Category.findById(id);
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 module.exports = new CategoryRepository();

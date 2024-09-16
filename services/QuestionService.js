@@ -43,7 +43,7 @@ class QuestionService {
 
     async retrieveQuestionFromAVariable(variableId) {
         try {
-            const variable = await variableRepository.getVariableById(variableId);
+            const variable = await variableRepository.findById(variableId);
             const questions = await QuestionRepository.findQuestionsByVariableId(variableId);
             const response = [];
 
