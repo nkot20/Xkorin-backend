@@ -9,4 +9,5 @@ services:
       - NODE_ENV=production
     volumes:
       - /home/xkorin/backend.git/:/app/.env
+      - /home/xkorin/backend.git/:/workspace/.env
     restart: always
