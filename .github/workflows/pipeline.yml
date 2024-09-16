@@ -23,13 +23,12 @@ jobs:
         with:
           node-version: 18
 
-
-      - name: Build and Push Docker Image with no cache
+      - name: Build and Push Docker Image
         env:
           DOCKER_BUILDKIT: 1
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker build --no-cache -t nkot20/xkorin-backend:latest .
+          docker build -t nkot20/xkorin-backend:latest .
           docker push nkot20/xkorin-backend:latest
           tar -czf "${GITHUB_SHA}".tar.gz --exclude=*.git --exclude=node_modules *
 
