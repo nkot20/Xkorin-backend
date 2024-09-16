@@ -14,9 +14,14 @@ const os = require('os');
 const cron = require('node-cron');
 const formData = require('express-form-data');
 const mongoClient = require('./ClientMongo/MongoClientTransaction');
-const indexRouter = require('./routes/')
+const indexRouter = require('./routes/');
+const morgan = require('morgan');
+const expressWinston = require('express-winston');
 
 const errorHandler = require('./middlewares/errorHandler');
+const winston = require("winston");
+const fs = require("fs");
+const Eureka = require('eureka-js-client').Eureka;
 
 
 // Debugging mongoose queries
@@ -51,7 +56,32 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({ limit: '150mb', extended: true }));
 app.use(bodyParser.json());
-
+app.use(morgan('combined'));
+// Configurer le logger pour les requêtes HTTP
+const logDirectory = path.join(__dirname, 'logs');
+if (!fs.existsSync(logDirectory)) {
+  fs.mkdirSync(logDirectory);
+}
+app.use(expressWinston.logger({
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.DailyRotateFile({
+      filename: path.join(logDirectory, 'request-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d'
+    })
+  ],
+  format: winston.format.combine(
+      winston.format.json(),
+      winston.format.timestamp()
+  ),
+  meta: true, // Inclure les métadonnées de requêtes
+  msg: "HTTP {{req.method}} {{req.url}}",
+  expressFormat: true, // Utiliser le format d'Express
+  colorize: false
+}));
 app.use(passport.initialize());
 
 app.all('/*', (req, res, next) => {
@@ -220,6 +250,34 @@ app.use((err, req, res, next) => {
 //   console.log("===========cron =======")
 //   emailSend.cronEmail();
 // });
+
+const client = new Eureka({
+  instance: {
+    app: 'EVALUATION-SERVICE',
+    instanceId: 'evaluation-service-' + Math.floor(Math.random() * 1000),
+    hostName: 'localhost',
+    ipAddr: '127.0.0.1',
+    port: {
+      '$': process.env.PORT ? parseInt(process.env.PORT) : 5000,
+      '@enabled': true,
+    },
+    vipAddress: 'EVALUATION-SERVICE',
+    dataCenterInfo: {
+      '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
+      name: 'MyOwn',
+    },
+  },
+  eureka: {
+    // URL of the Eureka server
+    host: 'localhost',
+    port: 8761,
+    servicePath: '/eureka/apps/',
+  },
+});
+
+client.start(error => {
+  console.log('Eureka client started:', error);
+});
 
 module.exports = app;
   
