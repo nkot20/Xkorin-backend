@@ -17,25 +17,20 @@ jobs:
     steps:
       - name: Checkout repositories
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetch the entire git history
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Show current commit info
-        run: git log -1  # Show the latest commit details for debugging
-
-      - name: Build and Push Docker Image
+      - name: Build and Push Docker Image with no cache
         env:
           DOCKER_BUILDKIT: 1
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker build -t nkot20/xkorin-backend:${{ github.sha }} .
-          docker push nkot20/xkorin-backend:${{ github.sha }}
-          tar -czf "${{ github.sha }}.tar.gz" --exclude=*.git --exclude=node_modules .
+          docker build --no-cache -t nkot20/xkorin-backend:latest .
+          docker push nkot20/xkorin-backend:latest
+          tar -czf "${GITHUB_SHA}".tar.gz --exclude=*.git --exclude=node_modules *
 
       - name: Store artefact for distribution
         uses: actions/upload-artifact@v3
@@ -76,24 +71,27 @@ jobs:
         run: mkdir -p artifact
 
       - name: Extract files
-        run: tar -xzf ${{ github.sha }}.tar.gz -C artifact
+        run: tar -xzf ${{ github.sha }}.tar.gz -C .
 
       - name: Drop zip and tar files
         run: rm ${{ github.sha }}.tar.gz
 
-      - name: Copy file via ssh password
+      - name: List extracted files
+        run: ls -alh
+
+      - name: Copy files via ssh
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
           port: ${{ secrets.DEPLOY_PORT }}
-          source: artifact/
+          source: .
           target: ${{ secrets.DEPLOY_PATH }}
           overwrite: true
           debug: true
 
-      - name: SSH into the server and deploy with Docker Compose
+      - name: SSH into the server and check Docker image
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -102,6 +100,17 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
+            docker images | grep nkot20/xkorin-backend
             docker-compose down
-            docker-compose pull app  # Pull the latest Docker image
+            docker-compose pull app
             docker-compose up -d
+
+      - name: Verify running containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          script: |
+            docker ps
