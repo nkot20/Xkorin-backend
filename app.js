@@ -251,33 +251,6 @@ app.use((err, req, res, next) => {
 //   emailSend.cronEmail();
 // });
 
-const client = new Eureka({
-  instance: {
-    app: 'EVALUATION-SERVICE',
-    instanceId: 'evaluation-service-' + Math.floor(Math.random() * 1000),
-    hostName: 'localhost',
-    ipAddr: '127.0.0.1',
-    port: {
-      '$': process.env.PORT ? parseInt(process.env.PORT) : 5000,
-      '@enabled': true,
-    },
-    vipAddress: 'EVALUATION-SERVICE',
-    dataCenterInfo: {
-      '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
-      name: 'MyOwn',
-    },
-  },
-  eureka: {
-    // URL of the Eureka server
-    host: 'localhost',
-    port: 8761,
-    servicePath: '/eureka/apps/',
-  },
-});
-
-client.start(error => {
-  console.log('Eureka client started:', error);
-});
 
 module.exports = app;
   
