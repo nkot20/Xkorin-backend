@@ -38,6 +38,7 @@ router.get(
     '/tree',
     asyncHandler(async (req, res) => {
         const response = await imprintRepository.getFootprintVariableTree();
+        console.log(response)
         res.status(200).send(response);
     })
 );

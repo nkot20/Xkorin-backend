@@ -37,14 +37,7 @@ const options = {
   uploadDir: os.tmpdir(),
   autoClean: true,
 };
-// parse data with connect-multiparty.
-// app.use(formData.parse(options));
-// delete from the request all empty files (size == 0)
-// app.use(formData.format());
-// change the file objects to fs.ReadStream
-// app.use(formData.stream());
-// union the body and the files
-// app.use(formData.union());
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
