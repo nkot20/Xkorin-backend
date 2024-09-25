@@ -46,6 +46,14 @@ class ImprintRepository {
         }
     }
 
+    async getListImprint() {
+        try {
+            return await Imprint.find();
+        } catch (error) {
+            throw error;
+        }
+    }
+
     /**
      * Fonction pour récupérer les derniers fils sans fils pour chaque variable sans père et leurs traductions
      * @param orphanVariables

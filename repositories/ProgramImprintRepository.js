@@ -1,5 +1,6 @@
 const Program = require('../models/Program');
 const Imprint = require('../models/Imprint');
+const ProgramImprint = require('../models/ProgramImprint');
 class ProgramImprintRepository {
 
     async create(payload) {
@@ -10,7 +11,7 @@ class ProgramImprintRepository {
                 throw new Error("Program doesn't exist");
             if (!imprint)
                 throw new Error("Imprint doesn't exist");
-            return await Imprint.create(payload);
+            return await ProgramImprint.create(payload);
         } catch (error) {
             console.error("Something went to wrong ", error);
             throw error;
@@ -28,3 +29,5 @@ class ProgramImprintRepository {
     }
 
 }
+
+module.exports = new ProgramImprintRepository();
