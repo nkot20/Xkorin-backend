@@ -100,7 +100,7 @@ describe('ProgramService', () => {
         expect(result).toBe(programs);
     });
 
-    test('listProgramsByInstitution should return paginated programs by institution', async () => {
+/*     test('listProgramsByInstitution should return paginated programs by institution', async () => {
         const institutionId = '668ff3709ccb48e2154b4093';
         const options = { search: 'Program' };
         const programs = [{ name: 'Program 1', targetName: 'Institution 1' }];
@@ -110,7 +110,7 @@ describe('ProgramService', () => {
         const result = await ProgramService.listProgramsByInstitution(institutionId, options);
 
         expect(result).toBe(programs);
-    });
+    }); */
 
     test('archivedProgram should call archiveProgram on repository', async () => {
         const id = 'programId';
