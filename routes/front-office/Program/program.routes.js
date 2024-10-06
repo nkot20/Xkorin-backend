@@ -6,10 +6,14 @@ const programService = require('../../../services/ProgramService');
 const logger = require('../../../logger');
 const validateSchema = require("../../../middlewares/validationSchema");
 
+
 const programCreateSchema = Joi.object({
     name: Joi.string().required(),
     institutionId: Joi.string().required(),
     targetInstitutionId: Joi.string().required(),
+    numberOfParticipants: Joi.number(),
+    amount: Joi.number(),
+    imprintIds: Joi.array()
 });
 
 const programUpdateSchema = Joi.object({
@@ -17,6 +21,8 @@ const programUpdateSchema = Joi.object({
     name: Joi.string(),
     institutionId: Joi.string(),
     targetInstitutionId: Joi.string(),
+    numberOfParticipants: Joi.number(),
+    amount: Joi.number()
 });
 
 /**
@@ -89,19 +95,18 @@ router.get(
             sortBy: req.query.sort || 'createdAt',
         };
         const response = await programService.listProgramsByInstitution(req.params.institutionId, options);
-        console.log(response)
         const pagination = {
-            hasNextPage: response.hasNextPage,
-            hasPrevPage: response.hasPrevPage,
-            limit: response.limit,
-            nextPage: response.nextPage,
-            page: response.page - 1,
-            pagingCounter: response.pagingCounter,
-            prevPage: response.prevPage,
-            totalDocs: response.totalDocs,
-            totalPages: response.totalPages,
+            hasNextPage: response.pagination.hasNextPage,
+            hasPrevPage: response.pagination.hasPrevPage,
+            limit: response.pagination.limit,
+            nextPage: response.pagination.nextPage,
+            page: response.pagination.page - 1,
+            pagingCounter: response.pagination.pagingCounter,
+            prevPage: response.pagination.prevPage,
+            totalDocs: response.pagination.totalDocs,
+            totalPages: response.pagination.totalPages,
         };
-        res.status(200).send({ programs: response.docs, pagination });
+        res.status(200).send({ programs: response.programs, pagination });
     })
 );
 
@@ -143,6 +148,45 @@ router.get(
     asyncHandler(async (req, res) => {
         const program = await programService.getById(req.params.id);
         return res.status(200).send(program);
+    })
+);
+
+
+
+/**
+ * @route GET /participants/:id
+ * @desc List programs by institution with pagination
+ * @access Public
+ * @param {string} institutionId - The ID of the institution
+ * @param {number} [page=1] - The page number for pagination
+ * @param {number} [limit=10] - The number of items per page
+ * @param {string} [search=''] - Search query
+ * @param {string} [order='asc'] - Sorting order
+ * @param {string} [sort='createdAt'] - Field to sort by
+ */
+router.get(
+    '/participants/list/:id',
+    asyncHandler(async (req, res) => {
+        const options = {
+            page: parseInt(req.query.page) || 1,
+            limit: parseInt(req.query.limit) || 10,
+            search: req.query.search || '',
+            sortDirection: req.query.order === 'asc' ? -1 : 1,
+            sortBy: req.query.sort || 'createdAt',
+        };
+        const response = await programService.getDetails(req.params.id, options);
+        const pagination = {
+            hasNextPage: response.pagination.hasNextPage,
+            hasPrevPage: response.pagination.hasPrevPage,
+            limit: response.pagination.limit,
+            nextPage: response.pagination.nextPage,
+            page: response.pagination.page - 1,
+            pagingCounter: response.pagination.pagingCounter,
+            prevPage: response.pagination.prevPage,
+            totalDocs: response.pagination.totalDocs,
+            totalPages: response.pagination.totalPages,
+        };
+        res.status(200).send({ participants: response.participantsWithCompany, pagination });
     })
 );
 

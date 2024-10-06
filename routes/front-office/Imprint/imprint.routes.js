@@ -25,6 +25,20 @@ router.get(
     })
 );
 
+
+/**
+ * @route GET /imprints/list
+ * @desc Get imprints list
+ * @access Public
+ */
+router.get(
+    '/list',
+    asyncHandler(async (req, res) => {
+        const response = await imprintRepository.getListImprint();
+        return res.status(200).send(response);
+    })
+);
+
 /**
  * @route GET /remaining-variables/:profilId/:subcategoryId/:isoCode/:examId
  * @desc Get remaining variable questions for imprints
