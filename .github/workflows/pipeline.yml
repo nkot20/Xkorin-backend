@@ -23,13 +23,12 @@ jobs:
         with:
           node-version: 18
 
-
       - name: Build and Push Docker Image with no cache
         env:
           DOCKER_BUILDKIT: 1
         run: |
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker build --no-cache -t nkot20/xkorin-backend:latest .
+          docker build -t nkot20/xkorin-backend:latest .
           docker push nkot20/xkorin-backend:latest
           tar -czf "${GITHUB_SHA}".tar.gz --exclude=*.git --exclude=node_modules *
 
@@ -77,10 +76,7 @@ jobs:
       - name: Drop zip and tar files
         run: rm ${{ github.sha }}.tar.gz
 
-      - name: List extracted files
-        run: ls -alh
-
-      - name: Copy files via ssh
+      - name: Copy file via ssh password
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -92,7 +88,7 @@ jobs:
           overwrite: true
           debug: true
 
-      - name: SSH into the server and check Docker image
+      - name: SSH into the server and deploy with Docker Compose
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -101,17 +97,6 @@ jobs:
           port: ${{ secrets.DEPLOY_PORT }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
-            docker images | grep nkot20/xkorin-backend
             docker-compose down
             docker-compose pull app
             docker-compose up -d
-
-      - name: Verify running containers
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: ${{ secrets.DEPLOY_PORT }}
-          script: |
-            docker ps
