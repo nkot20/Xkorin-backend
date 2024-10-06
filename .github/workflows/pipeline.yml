@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: 18
 
-      - name: Build and Push Docker Image
+      - name: Build and Push Docker Image with no cache
         env:
           DOCKER_BUILDKIT: 1
         run: |
